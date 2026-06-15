@@ -1,0 +1,59 @@
+name: Fix speaker button binding
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix speaker buttons
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          files = [
+              '阅读重点词_28词_刷词网页(1).html',
+              '手写单词本_179词_刷词网页_词义核对修正版.html',
+              '六级词汇闪过_前九单元词义终校_补identify版.html',
+          ]
+
+          bind = "document.querySelectorAll('.inline-sound-btn').forEach(btn => { btn.onclick = e => { e.stopPropagation(); speakWord(); }; });"
+          changed = False
+
+          for name in files:
+              p = Path(name)
+              text = p.read_text(encoding='utf-8')
+              old = text
+
+              # Remove any old hidden speaker block left inside the card.
+              text = re.sub(r'<div class="sound-pocket"[^>]*>\s*<button class="inline-sound-btn"[^>]*>🔊</button>\s*</div>', '', text, flags=re.S)
+
+              # Bind every visible speaker button, instead of only the first element with the id.
+              text = re.sub(r"\$\('inlineSoundBtn'\)\.onclick\s*=\s*e\s*=>\s*\{\s*e\.stopPropagation\(\);\s*speakWord\(\);\s*\};", bind, text)
+              text = re.sub(r"\$\('inlineSoundBtn'\)\.onclick\s*=\s*\(e\)\s*=>\s*\{\s*e\.stopPropagation\(\);\s*speakWord\(\);\s*\};", bind, text)
+
+              if "document.querySelectorAll('.inline-sound-btn')" not in text and 'inline-sound-btn' in text:
+                  text = text.replace("$('card').onclick = showMeaning;", bind + "\n$('card').onclick = showMeaning;")
+
+              if text != old:
+                  p.write_text(text, encoding='utf-8')
+                  changed = True
+
+          print('patched speaker buttons' if changed else 'already fixed')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "Fix speaker button binding"
+          git push

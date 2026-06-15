@@ -1,1 +1,0 @@
-# CET6-vocabulary

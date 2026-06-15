@@ -280,7 +280,7 @@ $('resetBtn').onclick = () => {
 $('yesBtn').onclick = yesReview;
 $('noBtn').onclick = noReview;
 $('prevBtn').onclick = goPrev;
-$('inlineSoundBtn').onclick = e => { e.stopPropagation(); speakWord(); };
+document.querySelectorAll('.inline-sound-btn').forEach(btn => { btn.onclick = e => { e.stopPropagation(); speakWord(); }; });
 $('card').onclick = showMeaning;
 
 document.querySelectorAll('.chip').forEach(btn => {

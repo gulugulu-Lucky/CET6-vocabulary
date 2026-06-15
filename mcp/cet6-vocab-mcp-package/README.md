@@ -1,17 +1,23 @@
 # CET-6 Vocabulary MCP Package
 
-这个目录用于暂存 CET-6 单词库 MCP 项目包。
+这个目录用于以后存放 CET-6 单词库 MCP 项目。
 
-当前包名：`cet6-vocab-mcp.zip`
+状态：暂存说明页。
 
-说明：由于 GitHub connector 不能直接上传二进制 zip，我先把包按 base64 分片方式存放在 `parts/` 目录下。恢复时把所有 `part01` 到最后一片按顺序拼接，再 base64 解码即可得到 zip。
+说明：当前 GitHub connector 不适合直接上传二进制 zip 包；完整项目 zip 仍保存在本次 ChatGPT 会话的文件里。这个目录先作为 GitHub 里的归档入口，后续如果要继续电脑端部署，可以把完整源码展开后提交到这里。
 
-恢复示例：
+建议后续目录结构：
 
-```bash
-cat parts/cet6-vocab-mcp.zip.b64.part* > cet6-vocab-mcp.zip.b64
-base64 -d cet6-vocab-mcp.zip.b64 > cet6-vocab-mcp.zip
-unzip cet6-vocab-mcp.zip
+```text
+mcp/cet6-vocab-mcp/
+├─ server.py
+├─ pyproject.toml
+├─ data/words.json
+├─ data/pending_changes.json
+├─ templates/
+├─ scripts/
+├─ README.md
+└─ QUICK_COMMANDS.md
 ```
 
-Keats 备注：这个 MCP 项目暂时只是归档保存，不会影响当前 GitHub Pages 刷词网页。
+Keats 备注：这个目录不会影响当前 GitHub Pages 刷词网页。

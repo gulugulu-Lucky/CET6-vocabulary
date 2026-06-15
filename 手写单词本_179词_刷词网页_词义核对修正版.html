@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>手写单词本｜179词刷词｜底部读音按钮</title>
+<style>
+:root {
+  --bg1:#fff7fb; --bg2:#eef5ff; --card:#ffffffcc; --text:#253047;
+  --muted:#6d7890; --accent:#ff75a0; --accent2:#7c8cff; --good:#26a269; --bad:#e35d6a;
+  --shadow: 0 18px 55px rgba(80, 79, 140, .18);
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--text); background:radial-gradient(circle at top left,var(--bg1),transparent 42%),linear-gradient(135deg,#fff,var(--bg2));
+}
+.app { width:min(920px,100%); margin:0 auto; padding:10px 16px 28px; }
+.panel { background:var(--card); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.7); border-radius:26px; padding:16px; box-shadow:var(--shadow); }
+.controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+button { font:inherit; border:0; border-radius:16px; padding:12px 14px; background:#fff; color:var(--text); box-shadow:inset 0 0 0 1px #edf0fa; cursor:pointer; transition:none; font-weight:650; }
+button:active { transform:none; }
+.secondary { background:#f7f8ff; }
+.card { min-height:382px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; background:#fff; border-radius:28px; padding:34px 18px; margin-top:8px; position:relative; overflow:hidden; }
+.card:before { content:""; position:absolute; width:180px; height:180px; border-radius:50%; background:#fff0f6; top:-72px; right:-72px; }
+.unit-tag { position:absolute; top:18px; left:20px; color:var(--muted); font-size:13px; }
+.word { font-size:48px; font-weight:800; letter-spacing:.4px; line-height:1.08; word-break:break-word; z-index:1; }
+.sound-btn { z-index:1; width:72px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
+.meaning { z-index:1; min-height:58px; font-size:23px; line-height:1.45; color:#34415f; padding:0 14px; display:none; white-space:pre-line; }
+.meaning.show { display:block; }
+.ipa { z-index:1; min-height:28px; font-size:19px; color:var(--muted); letter-spacing:.3px; display:none; }
+.ipa.show { display:block; }
+.actions { display:grid; grid-template-columns:1fr 72px 1fr; gap:10px; margin-top:12px; }
+.good { background:#ebfff5; color:var(--good); }
+.bad { background:#fff0f2; color:var(--bad); }
+.progress-wrap { height:10px; background:#eef1fb; border-radius:999px; overflow:hidden; margin:14px 2px 8px; }
+.progress { height:100%; width:0%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:999px; transition:.2s width; }
+.stats { display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:13px; flex-wrap:wrap; }
+.modebar { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 0; }
+.chip { padding:9px 11px; border-radius:999px; background:#fff; box-shadow:inset 0 0 0 1px #edf0fa; font-size:13px; }
+.chip.active { background:#253047; color:white; }
+.footer { text-align:center; color:var(--muted); font-size:12px; margin-top:14px; }
+@media (max-width:720px) {
+  .controls { grid-template-columns:1fr; }
+  .word { font-size:40px; }
+  .meaning { font-size:20px; }
+  .ipa { font-size:18px; }
+  .card { min-height:385px; }
+}
+
+html, body, button, .card {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button, .card, .word, .meaning, .ipa {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <div class="controls">
+      <button class="secondary" id="shuffleBtn">打乱顺序</button>
+      <button class="secondary" id="resetBtn">重置记录</button>
+    </div>
+    <div class="modebar">
+      <button class="chip active" data-mode="all">全部</button>
+      <button class="chip" data-mode="unknown">只刷不会</button>
+      <button class="chip" data-mode="unseen">只刷未刷</button>
+    </div>
+    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    <div class="stats">
+      <span id="posText"></span>
+      <span id="knownText"></span>
+      <span id="unknownText"></span>
+    </div>
+    <div class="card" id="card">
+      <div class="unit-tag" id="unitTag">手写单词本 · 179词</div>
+      <div class="word" id="word">Ready?</div>
+      <div class="meaning" id="meaning"></div>
+      <div class="ipa" id="ipa"></div>
+    </div>
+    <div class="actions">
+      <button class="bad" id="noBtn">不会，看意思</button>
+      <button class="sound-btn" id="soundBtn" title="播放读音" aria-label="播放读音">🔊</button>
+      <button class="good" id="yesBtn">会，显示意思</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = [{"id": 1, "word": "pension", "meaning": "n. 退休金；抚恤金；养老金", "source": "图1", "ipa": "/ˈpenʃn/"}, {"id": 2, "word": "competent", "meaning": "adj. 有能力的；合格的；胜任的", "source": "图1", "ipa": "/ˈkɒmpɪtənt/"}, {"id": 3, "word": "eminent", "meaning": "adj. 杰出的；著名的；显赫的", "source": "图1", "ipa": "/ˈemɪnənt/"}, {"id": 4, "word": "wrestle", "meaning": "v. 摔跤；扭打；斗争", "source": "图1", "ipa": "/ˈresl/"}, {"id": 5, "word": "align", "meaning": "v. 对准；使一致；结盟", "source": "图1", "ipa": "/əˈlaɪn/"}, {"id": 6, "word": "veteran", "meaning": "n. 老兵；老手", "source": "图1", "ipa": "/ˈvetərən/"}, {"id": 7, "word": "haven", "meaning": "n. 避难所；庇护所", "source": "图1", "ipa": "/ˈheɪvn/"}, {"id": 8, "word": "suite", "meaning": "n. 套间；一套；套装", "source": "图1", "ipa": "/swiːt/"}, {"id": 9, "word": "antique", "meaning": "n. 古董\nadj. 古董的；古老的", "source": "图1", "ipa": "/ænˈtiːk/"}, {"id": 10, "word": "eccentric", "meaning": "adj. 古怪的", "source": "图1", "ipa": "/ɪkˈsentrɪk/"}, {"id": 11, "word": "worship", "meaning": "v. 崇拜；做礼拜\nn. 崇拜；礼拜", "source": "图1", "ipa": "/ˈwɜːʃɪp/"}, {"id": 12, "word": "dogma", "meaning": "n. 教条；信条", "source": "图1", "ipa": "/ˈdɒɡmə/"}, {"id": 13, "word": "oblige", "meaning": "v. 迫使；帮忙；使感激不尽", "source": "图1", "ipa": "/əˈblaɪdʒ/"}, {"id": 14, "word": "eject", "meaning": "v. 驱逐；弹出", "source": "图1", "ipa": "/ɪˈdʒekt/"}, {"id": 15, "word": "eradicate", "meaning": "v. 根除；消灭；杜绝", "source": "图1", "ipa": "/ɪˈrædɪkeɪt/"}, {"id": 16, "word": "elicit", "meaning": "v. 引出；套出；引起", "source": "图1", "ipa": "/ɪˈlɪsɪt/"}, {"id": 17, "word": "erect", "meaning": "v. 建立；竖立\nadj. 直立的", "source": "图1", "ipa": "/ɪˈrekt/"}, {"id": 18, "word": "expedition", "meaning": "n. 远征；探险队；考察旅行", "source": "图1", "ipa": "/ˌekspəˈdɪʃn/"}, {"id": 19, "word": "expertise", "meaning": "n. 专长；专业知识；专门技能", "source": "图1", "ipa": "/ˌekspɜːˈtiːz/"}, {"id": 20, "word": "excess", "meaning": "adj. 额外的；过量的\nn. 过量；过度", "source": "图1", "ipa": "/ɪkˈses/"}, {"id": 21, "word": "collide", "meaning": "v. 碰撞；相撞；冲突", "source": "图1", "ipa": "/kəˈlaɪd/"}, {"id": 22, "word": "compound", "meaning": "n. 混合物；复合物\nadj. 复合的\nv. 使加重；混合", "source": "图1", "ipa": "/ˈkɒmpaʊnd/"}, {"id": 23, "word": "compact", "meaning": "adj. 紧凑的；小巧的\nv. 把……压实；压紧\nn. 协议；契约", "source": "图1", "ipa": "/kəmˈpækt/"}, {"id": 24, "word": "concrete", "meaning": "adj. 具体的；混凝土制的\nn. 混凝土", "source": "图1", "ipa": "/ˈkɒŋkriːt/"}, {"id": 25, "word": "counsel", "meaning": "n. 建议；法律顾问\nv. 建议；劝告", "source": "图1", "ipa": "/ˈkaʊnsl/"}, {"id": 26, "word": "conspicuous", "meaning": "adj. 明显的；引人注意的", "source": "图1", "ipa": "/kənˈspɪkjuəs/"}, {"id": 27, "word": "denounce", "meaning": "v. 谴责；告发", "source": "图1", "ipa": "/dɪˈnaʊns/"}, {"id": 28, "word": "derail", "meaning": "v. 出轨；脱轨；阻挠", "source": "图1", "ipa": "/dɪˈreɪl/"}, {"id": 29, "word": "deprive", "meaning": "v. 剥夺", "source": "图1", "ipa": "/dɪˈpraɪv/"}, {"id": 30, "word": "debris", "meaning": "n. 碎片；残骸；瓦砾", "source": "图1", "ipa": "/ˈdebriː/"}, {"id": 31, "word": "devour", "meaning": "v. 吞食；吞噬；津津有味地阅读", "source": "图1", "ipa": "/dɪˈvaʊə(r)/"}, {"id": 32, "word": "unleash", "meaning": "v. 释放；发动", "source": "图2", "ipa": "/ʌnˈliːʃ/"}, {"id": 33, "word": "terrace", "meaning": "n. 排屋；露天平台", "source": "图2", "ipa": "/ˈterəs/"}, {"id": 34, "word": "mandate", "meaning": "n. 授权；命令\nv. 授权；强制执行", "source": "图2", "ipa": "/ˈmændeɪt/"}, {"id": 35, "word": "manipulate", "meaning": "v. 操作；操纵", "source": "图2", "ipa": "/məˈnɪpjuleɪt/"}, {"id": 36, "word": "peninsula", "meaning": "n. 半岛", "source": "图2", "ipa": "/pəˈnɪnsjələ/"}, {"id": 37, "word": "shepherd", "meaning": "n. 牧羊人", "source": "图2", "ipa": "/ˈʃepəd/"}, {"id": 38, "word": "idiosyncratic", "meaning": "adj. 特有的；独特的", "source": "图2", "ipa": "/ˌɪdiəʊsɪnˈkrætɪk/"}, {"id": 39, "word": "dedicate", "meaning": "v. 把……奉献给；为……举行落成典礼", "source": "图2", "ipa": "/ˈdedɪkeɪt/"}, {"id": 40, "word": "liberal", "meaning": "adj. 自由的；开明的", "source": "图2", "ipa": "/ˈlɪbərəl/"}, {"id": 41, "word": "liberate", "meaning": "v. 解放；释放", "source": "图2", "ipa": "/ˈlɪbəreɪt/"}, {"id": 42, "word": "patron", "meaning": "n. 赞助人；顾客", "source": "图2", "ipa": "/ˈpeɪtrən/"}, {"id": 43, "word": "silicon", "meaning": "n. 硅", "source": "图2", "ipa": "/ˈsɪlɪkən/"}, {"id": 44, "word": "subsistence", "meaning": "n. 生存；生计", "source": "图2", "ipa": "/səbˈsɪstəns/"}, {"id": 45, "word": "lavish", "meaning": "adj. 盛大的；慷慨的；奢侈的\nv. 滥用；浪费", "source": "图2", "ipa": "/ˈlævɪʃ/"}, {"id": 46, "word": "cruise", "meaning": "v. 乘船游览；巡航\nn. 乘船游览；巡航", "source": "图2", "ipa": "/kruːz/"}, {"id": 47, "word": "jeopardize", "meaning": "v. 危及；危害", "source": "图2", "ipa": "/ˈdʒepədaɪz/"}, {"id": 48, "word": "entity", "meaning": "n. 实体", "source": "图2", "ipa": "/ˈentəti/"}, {"id": 49, "word": "potent", "meaning": "adj. 强有力的；有效力的；烈性的", "source": "图2", "ipa": "/ˈpəʊtnt/"}, {"id": 50, "word": "turbulent", "meaning": "adj. 动荡的；汹涌的", "source": "图2", "ipa": "/ˈtɜːbjələnt/"}, {"id": 51, "word": "incumbent", "meaning": "n. 现任官员\nadj. 在职的；现任的", "source": "图2", "ipa": "/ɪnˈkʌmbənt/"}, {"id": 52, "word": "detergent", "meaning": "n. 洗涤剂；清洁剂", "source": "图2", "ipa": "/dɪˈtɜːdʒənt/"}, {"id": 53, "word": "plumbing", "meaning": "n. 水管装置；管道系统", "source": "图2", "ipa": "/ˈplʌmɪŋ/"}, {"id": 54, "word": "bearing", "meaning": "n. 关系；方位；轴承", "source": "图2", "ipa": "/ˈbeərɪŋ/"}, {"id": 55, "word": "lofty", "meaning": "adj. 崇高的；高耸的；傲慢的", "source": "图2", "ipa": "/ˈlɒfti/"}, {"id": 56, "word": "wary", "meaning": "adj. 小心翼翼的；谨慎的；警惕的", "source": "图2", "ipa": "/ˈweəri/"}, {"id": 57, "word": "hierarchy", "meaning": "n. 等级制度；层次体系", "source": "图2", "ipa": "/ˈhaɪərɑːki/"}, {"id": 58, "word": "artery", "meaning": "n. 动脉；干线", "source": "图2", "ipa": "/ˈɑːtəri/"}, {"id": 59, "word": "county", "meaning": "n. 县", "source": "图2", "ipa": "/ˈkaʊnti/"}, {"id": 60, "word": "agony", "meaning": "n. 痛苦", "source": "图2", "ipa": "/ˈæɡəni/"}, {"id": 61, "word": "turf", "meaning": "n. 草皮", "source": "图2", "ipa": "/tɜːf/"}, {"id": 62, "word": "sequence", "meaning": "n. 顺序；序列；一系列", "source": "图2", "ipa": "/ˈsiːkwəns/"}, {"id": 63, "word": "sanction", "meaning": "n. 制裁；批准\nv. 批准；认可；制裁", "source": "图2", "ipa": "/ˈsæŋkʃn/"}, {"id": 64, "word": "boast", "meaning": "v. 吹嘘；拥有\nn. 夸口；值得骄傲的事物", "source": "图3", "ipa": "/bəʊst/"}, {"id": 65, "word": "dock", "meaning": "n. 码头\nv. 停靠码头", "source": "图3", "ipa": "/dɒk/"}, {"id": 66, "word": "fleet", "meaning": "n. 舰队；船队；车队", "source": "图3", "ipa": "/fliːt/"}, {"id": 67, "word": "gear", "meaning": "n. 排挡；装备；齿轮\nv. 使适合", "source": "图3", "ipa": "/ɡɪə(r)/"}, {"id": 68, "word": "hack", "meaning": "v. 非法侵入；劈砍", "source": "图3", "ipa": "/hæk/"}, {"id": 69, "word": "hazard", "meaning": "n. 危险；危害；风险", "source": "图3", "ipa": "/ˈhæzəd/"}, {"id": 70, "word": "fame", "meaning": "n. 名声；声誉", "source": "图3", "ipa": "/feɪm/"}, {"id": 71, "word": "fare", "meaning": "n. 票价；费用", "source": "图3", "ipa": "/feə(r)/"}, {"id": 72, "word": "lens", "meaning": "n. 透镜；镜头", "source": "图3", "ipa": "/lenz/"}, {"id": 73, "word": "sniff", "meaning": "n. 嗅；闻\nv. 嗅；抽鼻子", "source": "图3", "ipa": "/snɪf/"}, {"id": 74, "word": "conducive", "meaning": "adj. 有助于……的；有益于……的", "source": "图3", "ipa": "/kənˈduːsɪv/"}, {"id": 75, "word": "impart", "meaning": "v. 传授；把（某性质）赋予", "source": "图3", "ipa": "/ɪmˈpɑːt/"}, {"id": 76, "word": "impair", "meaning": "v. 损害；削弱", "source": "图3", "ipa": "/ɪmˈpeə(r)/"}, {"id": 77, "word": "contagious", "meaning": "adj. 有感染力的；传染性的", "source": "图3", "ipa": "/kənˈteɪdʒəs/"}, {"id": 78, "word": "pasture", "meaning": "n. 牧场；草地", "source": "图3", "ipa": "/ˈpɑːstʃə(r)/"}, {"id": 79, "word": "configuration", "meaning": "n. 布局；结构；配置", "source": "图3", "ipa": "/kənˌfɪɡəˈreɪʃn/"}, {"id": 80, "word": "municipal", "meaning": "adj. 地方政府的；市政的", "source": "图3", "ipa": "/mjuːˈnɪsɪpl/"}, {"id": 81, "word": "cardinal", "meaning": "adj. 最重要的；基本的；主要的", "source": "图3", "ipa": "/ˈkɑːdɪnl/"}, {"id": 82, "word": "remnant", "meaning": "n. 残余部分；剩余部分", "source": "图3", "ipa": "/ˈremnənt/"}, {"id": 83, "word": "sanitation", "meaning": "n. 公共卫生；环境卫生；卫生设施", "source": "图3", "ipa": "/ˌsænɪˈteɪʃn/"}, {"id": 84, "word": "integral", "meaning": "adj. 完整的；不可或缺的", "source": "图3", "ipa": "/ˈɪntɪɡrəl/"}, {"id": 85, "word": "medieval", "meaning": "adj. 中世纪的", "source": "图3", "ipa": "/ˌmediˈiːvl/"}, {"id": 86, "word": "retort", "meaning": "v. 反驳\nn. 反驳", "source": "图3", "ipa": "/rɪˈtɔːt/"}, {"id": 87, "word": "refuge", "meaning": "n. 庇护；避难；避难所；收容所", "source": "图3", "ipa": "/ˈrefjuːdʒ/"}, {"id": 88, "word": "relentless", "meaning": "adj. 不停的；不懈的；不屈不挠的", "source": "图3", "ipa": "/rɪˈlentləs/"}, {"id": 89, "word": "relay", "meaning": "v. 转发；传达；转播\nn. 接力赛；中继", "source": "图3", "ipa": "/ˈriːleɪ/"}, {"id": 90, "word": "rhetoric", "meaning": "n. 修辞；说辞", "source": "图3", "ipa": "/ˈretərɪk/"}, {"id": 91, "word": "negligent", "meaning": "adj. 失职的；疏忽的；粗心大意的", "source": "图3", "ipa": "/ˈneɡlɪdʒənt/"}, {"id": 92, "word": "delicacy", "meaning": "n. 周到；棘手；美食", "source": "图3", "ipa": "/ˈdelɪkəsi/"}, {"id": 93, "word": "delicate", "meaning": "adj. 精致的；易碎的；纤细的", "source": "图3", "ipa": "/ˈdelɪkət/"}, {"id": 94, "word": "devote", "meaning": "v. 致力；奉献", "source": "图3", "ipa": "/dɪˈvəʊt/"}, {"id": 95, "word": "denote", "meaning": "v. 表示；象征；代表", "source": "图3", "ipa": "/dɪˈnəʊt/"}, {"id": 96, "word": "deter", "meaning": "v. 制止；阻止；威慑", "source": "图3", "ipa": "/dɪˈtɜː(r)/"}, {"id": 97, "word": "deploy", "meaning": "v. 部署；调动", "source": "图3", "ipa": "/dɪˈplɔɪ/"}, {"id": 98, "word": "pine", "meaning": "n. 松树\nv. 苦苦思念", "source": "图4", "ipa": "/paɪn/"}, {"id": 99, "word": "pledge", "meaning": "n. 保证；承诺\nv. 正式承诺；保证", "source": "图4", "ipa": "/pledʒ/"}, {"id": 100, "word": "rug", "meaning": "n. 小地毯；小毯子", "source": "图4", "ipa": "/rʌɡ/"}, {"id": 101, "word": "culminate", "meaning": "v. 以……告终；达到顶点；结束", "source": "图4", "ipa": "/ˈkʌlmɪneɪt/"}, {"id": 102, "word": "abort", "meaning": "v. 使流产；终止；中途放弃", "source": "图4", "ipa": "/əˈbɔːt/"}, {"id": 103, "word": "reassure", "meaning": "v. 使安心；使消除疑虑", "source": "图4", "ipa": "/ˌriːəˈʃʊə(r)/"}, {"id": 104, "word": "overhaul", "meaning": "n. 检修；改革\nv. 彻底检修；大修", "source": "图4", "ipa": "/ˌəʊvəˈhɔːl/"}, {"id": 105, "word": "renovate", "meaning": "v. 翻新；修复；整修", "source": "图4", "ipa": "/ˈrenəveɪt/"}, {"id": 106, "word": "radiate", "meaning": "v. 显示；发散；辐射", "source": "图4", "ipa": "/ˈreɪdieɪt/"}, {"id": 107, "word": "irritate", "meaning": "v. 激怒；刺激", "source": "图4", "ipa": "/ˈɪrɪteɪt/"}, {"id": 108, "word": "situate", "meaning": "v. 使位于；使联系", "source": "图4", "ipa": "/ˈsɪtʃueɪt/"}, {"id": 109, "word": "initiate", "meaning": "v. 发起；开始实施", "source": "图4", "ipa": "/ɪˈnɪʃieɪt/"}, {"id": 110, "word": "intimidate", "meaning": "v. 恐吓；威胁", "source": "图4", "ipa": "/ɪnˈtɪmɪdeɪt/"}, {"id": 111, "word": "corporation", "meaning": "n. 大公司", "source": "图4", "ipa": "/ˌkɔːpəˈreɪʃn/"}, {"id": 112, "word": "connotation", "meaning": "n. 含义", "source": "图4", "ipa": "/ˌkɒnəˈteɪʃn/"}, {"id": 113, "word": "workshop", "meaning": "n. 车间；研讨会", "source": "图4", "ipa": "/ˈwɜːkʃɒp/"}, {"id": 114, "word": "blackmail", "meaning": "n. 敲诈；勒索\nv. 敲诈；勒索", "source": "图4", "ipa": "/ˈblækmeɪl/"}, {"id": 115, "word": "bypass", "meaning": "n. 旁路；旁道\nv. 绕开", "source": "图4", "ipa": "/ˈbaɪpɑːs/"}, {"id": 116, "word": "layoff", "meaning": "n. 解雇；裁员", "source": "图4", "ipa": "/ˈleɪɒf/"}, {"id": 117, "word": "dub", "meaning": "v. 把……称作；给……配音", "source": "图4", "ipa": "/dʌb/"}, {"id": 118, "word": "escort", "meaning": "n. 护卫队；护送者\nv. 陪同；护送", "source": "图4", "ipa": "/ˈeskɔːt/"}, {"id": 119, "word": "grim", "meaning": "adj. 严峻的；令人沮丧的；严肃的", "source": "图4", "ipa": "/ɡrɪm/"}, {"id": 120, "word": "atlas", "meaning": "n. 地图册；地图集", "source": "图4", "ipa": "/ˈætləs/"}, {"id": 121, "word": "brew", "meaning": "v. 酿制；酝酿\nn. 混合；冲泡饮料", "source": "图4", "ipa": "/bruː/"}, {"id": 122, "word": "flip", "meaning": "v. 按开关；轻抛；翻转\nn. 轻弹；翻转", "source": "图4", "ipa": "/flɪp/"}, {"id": 123, "word": "frantic", "meaning": "adj. 发疯的；匆忙混乱的", "source": "图4", "ipa": "/ˈfræntɪk/"}, {"id": 124, "word": "slum", "meaning": "n. 贫民区；贫民窟", "source": "图4", "ipa": "/slʌm/"}, {"id": 125, "word": "cosy", "meaning": "adj. 温暖舒适的；亲切的；密切的", "source": "图4", "ipa": "/ˈkəʊzi/"}, {"id": 126, "word": "hectic", "meaning": "adj. 忙碌的；繁忙的", "source": "图4", "ipa": "/ˈhektɪk/"}, {"id": 127, "word": "slash", "meaning": "v. 大幅削减；砍伤\nn. 斜线；砍痕", "source": "图4", "ipa": "/slæʃ/"}, {"id": 128, "word": "snap", "meaning": "v. 断裂；拍照；厉声说\nn. 快照；啪嗒声", "source": "图4", "ipa": "/snæp/"}, {"id": 129, "word": "bare", "meaning": "adj. 光秃秃的；裸露的；空的", "source": "图4", "ipa": "/beə(r)/"}, {"id": 130, "word": "staple", "meaning": "adj. 主要的\nn. 主食；主要产品；订书钉\nv. 用订书机订", "source": "图4", "ipa": "/ˈsteɪpl/"}, {"id": 131, "word": "locomotive", "meaning": "n. 机车；火车头\nadj. 运动的；移动的", "source": "图5", "ipa": "/ˌləʊkəˈməʊtɪv/"}, {"id": 132, "word": "motion", "meaning": "n. 运动；动作", "source": "图5", "ipa": "/ˈməʊʃn/"}, {"id": 133, "word": "sight", "meaning": "n. 视力；看见；景象", "source": "图5", "ipa": "/saɪt/"}, {"id": 134, "word": "inevitable", "meaning": "adj. 不可避免的；必然发生的", "source": "图5", "ipa": "/ɪnˈevɪtəbl/"}, {"id": 135, "word": "liable", "meaning": "adj. 有责任的；有义务的；易于……的", "source": "图5", "ipa": "/ˈlaɪəbl/"}, {"id": 136, "word": "indispensable", "meaning": "adj. 必不可少的；不可或缺的", "source": "图5", "ipa": "/ˌɪndɪˈspensəbl/"}, {"id": 137, "word": "ignite", "meaning": "v. 点燃；激起", "source": "图5", "ipa": "/ɪɡˈnaɪt/"}, {"id": 138, "word": "sinister", "meaning": "adj. 邪恶的；阴险的；不祥的", "source": "图5", "ipa": "/ˈsɪnɪstə(r)/"}, {"id": 139, "word": "propel", "meaning": "v. 驱动；推进", "source": "图5", "ipa": "/prəˈpel/"}, {"id": 140, "word": "harmony", "meaning": "n. 和谐；和睦", "source": "图5", "ipa": "/ˈhɑːməni/"}, {"id": 141, "word": "interact", "meaning": "v. 相互作用；互动；交流", "source": "图5", "ipa": "/ˌɪntərˈækt/"}, {"id": 142, "word": "evident", "meaning": "adj. 明显的；显然的", "source": "图5", "ipa": "/ˈevɪdənt/"}, {"id": 143, "word": "obscure", "meaning": "adj. 无名的；晦涩的；难懂的\nv. 使模糊；掩盖", "source": "图5", "ipa": "/əbˈskjʊə(r)/"}, {"id": 144, "word": "orient", "meaning": "v. 确定方向；使适应", "source": "图5", "ipa": "/ˈɔːrient/"}, {"id": 145, "word": "aristocrat", "meaning": "n. 贵族", "source": "图5", "ipa": "/ˈærɪstəkræt/"}, {"id": 146, "word": "democracy", "meaning": "n. 民主", "source": "图5", "ipa": "/dɪˈmɒkrəsi/"}, {"id": 147, "word": "immerse", "meaning": "v. 使沉浸；使深陷", "source": "图5", "ipa": "/ɪˈmɜːs/"}, {"id": 148, "word": "intuition", "meaning": "n. 直觉；直觉力", "source": "图5", "ipa": "/ˌɪntjuˈɪʃn/"}, {"id": 149, "word": "magnify", "meaning": "v. 放大；夸大；使问题加重", "source": "图5", "ipa": "/ˈmæɡnɪfaɪ/"}, {"id": 150, "word": "tact", "meaning": "n. 机敏；得体", "source": "图5", "ipa": "/tækt/"}, {"id": 151, "word": "leaflet", "meaning": "n. 传单；小册子", "source": "图5", "ipa": "/ˈliːflət/"}, {"id": 152, "word": "quarrel", "meaning": "n. 争吵；争论\nv. 争吵；争论", "source": "图5", "ipa": "/ˈkwɒrəl/"}, {"id": 153, "word": "accordance", "meaning": "n. 一致；符合", "source": "图5", "ipa": "/əˈkɔːdns/"}, {"id": 154, "word": "dimension", "meaning": "n. 方面；范围；维度", "source": "图5", "ipa": "/daɪˈmenʃn/"}, {"id": 155, "word": "divert", "meaning": "v. 转移；改变；用于", "source": "图5", "ipa": "/daɪˈvɜːt/"}, {"id": 156, "word": "digest", "meaning": "v. 消化；领会；承受\nn. 摘要；文摘", "source": "图5", "ipa": "/daɪˈdʒest/"}, {"id": 157, "word": "vocal", "meaning": "adj. 嗓音的；发声的；直言不讳的", "source": "图5", "ipa": "/ˈvəʊkl/"}, {"id": 158, "word": "fatal", "meaning": "adj. 致命的；灾难性的", "source": "图5", "ipa": "/ˈfeɪtl/"}, {"id": 159, "word": "dental", "meaning": "adj. 牙齿的；牙科的", "source": "图5", "ipa": "/ˈdentl/"}, {"id": 160, "word": "suffice", "meaning": "v. 足够；足以", "source": "图5", "ipa": "/səˈfaɪs/"}, {"id": 161, "word": "feat", "meaning": "n. 功绩；业绩", "source": "图5", "ipa": "/fiːt/"}, {"id": 162, "word": "metaphor", "meaning": "n. 隐喻；象征", "source": "图5", "ipa": "/ˈmetəfə(r)/"}, {"id": 163, "word": "regime", "meaning": "n. 政权；管理制度", "source": "图5", "ipa": "/reɪˈʒiːm/"}, {"id": 164, "word": "parameter", "meaning": "n. 参数；范围；限定因素", "source": "图5", "ipa": "/pəˈræmɪtə(r)/"}, {"id": 165, "word": "collar", "meaning": "n. 衣领；项圈", "source": "图6", "ipa": "/ˈkɒlə(r)/"}, {"id": 166, "word": "displace", "meaning": "v. 取代；转移；迫使……背井离乡", "source": "图6", "ipa": "/dɪsˈpleɪs/"}, {"id": 167, "word": "dispense", "meaning": "v. 分配；发放；配给", "source": "图6", "ipa": "/dɪˈspens/"}, {"id": 168, "word": "discourse", "meaning": "n. 演讲；谈话", "source": "图6", "ipa": "/ˈdɪskɔːs/"}, {"id": 169, "word": "amend", "meaning": "v. 修改；修正", "source": "图6", "ipa": "/əˈmend/"}, {"id": 170, "word": "associate", "meaning": "v. 联系；交往\nadj. 副的\nn. 同事；伙伴", "source": "图6", "ipa": "/əˈsəʊʃieɪt/"}, {"id": 171, "word": "ascend", "meaning": "v. 攀登；上升", "source": "图6", "ipa": "/əˈsend/"}, {"id": 172, "word": "breathe", "meaning": "v. 呼吸；散发", "source": "图6", "ipa": "/briːð/"}, {"id": 173, "word": "aggregate", "meaning": "n. 总计；合计\nadj. 总数的\nv. 总计；汇集", "source": "图6", "ipa": "/ˈæɡrɪɡət/"}, {"id": 174, "word": "morale", "meaning": "n. 士气", "source": "图6", "ipa": "/məˈrɑːl/"}, {"id": 175, "word": "renown", "meaning": "n. 名誉；名望", "source": "图6", "ipa": "/rɪˈnaʊn/"}, {"id": 176, "word": "revive", "meaning": "v. 复醒；复苏；复兴", "source": "图6", "ipa": "/rɪˈvaɪv/"}, {"id": 177, "word": "refuse", "meaning": "v. 拒绝；回绝\nn. 垃圾；废物", "source": "图6", "ipa": "/rɪˈfjuːz/"}, {"id": 178, "word": "revolt", "meaning": "n. 反叛；叛乱\nv. 反抗；叛乱", "source": "图6", "ipa": "/rɪˈvəʊlt/"}, {"id": 179, "word": "aesthetic", "meaning": "adj. 审美的；美学的；美的", "source": "图6", "ipa": "/iːsˈθetɪk/"}];
+let order = [];
+let idx = 0;
+let mode = 'all';
+let shown = false;
+const $ = id => document.getElementById(id);
+const key = () => 'handwritten_vocab_179_audio_ipa_v1';
+const state = () => JSON.parse(localStorage.getItem(key()) || '{}');
+const save = s => localStorage.setItem(key(), JSON.stringify(s));
+
+function currentItem() {
+  if (!order.length) return null;
+  return DATA[order[idx]];
+}
+function filteredIndexes() {
+  const s = state();
+  return DATA.map((_, i) => i).filter(i => {
+    if (mode === 'unknown') return s[i] === 'unknown';
+    if (mode === 'unseen') return !s[i];
+    return true;
+  });
+}
+function shuffleArray(a) {
+  for (let i=a.length-1; i>0; i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+}
+function resetYesButton() { $('yesBtn').textContent = '会，显示意思'; }
+function resetBothButtons() { resetYesButton(); resetNoButton(); }
+function afterShowButton() { $('yesBtn').textContent = '记住了，过'; }
+function rebuildOrder(shuffle=false) {
+  order = filteredIndexes();
+  if (shuffle) shuffleArray(order);
+  idx = 0;
+  render();
+}
+function updateStats() {
+  const s = state();
+  const known = Object.values(s).filter(v=>v==='known').length;
+  const unknown = Object.values(s).filter(v=>v==='unknown').length;
+  const done = known + unknown;
+  $('progress').style.width = DATA.length ? (done/DATA.length*100)+'%' : '0%';
+  $('knownText').textContent = '会：' + known;
+  $('unknownText').textContent = '重点：' + unknown;
+  $('posText').textContent = order.length ? ((idx+1)+' / '+order.length+' 当前｜'+done+' / '+DATA.length+' 已刷') : (done+' / '+DATA.length+' 已刷');
+}
+function render() {
+  updateStats();
+  if (!order.length) {
+    $('word').textContent = mode==='unknown' ? '暂时没有“不会”词' : mode==='unseen' ? '未刷词清空啦' : '没有词条';
+    $('meaning').textContent = '换个模式或重置记录就可以继续刷。';
+    $('meaning').classList.add('show');
+    $('ipa').textContent = '';
+    $('ipa').classList.remove('show');
+    resetBothButtons();
+    return;
+  }
+  if (idx >= order.length) idx = 0;
+  const item = currentItem();
+  shown = false;
+  $('unitTag').textContent = '手写单词本 · ' + item.source;
+  $('word').textContent = item.word;
+  $('meaning').textContent = item.meaning;
+  $('meaning').classList.remove('show');
+  $('ipa').textContent = item.ipa;
+  $('ipa').classList.remove('show');
+  updateStats();
+  resetBothButtons();
+}
+function speakWord() {
+  const item = currentItem();
+  if (!item || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(item.word);
+  utter.lang = 'en-US';
+  utter.rate = 0.82;
+  utter.pitch = 1;
+  window.speechSynthesis.speak(utter);
+}
+function showMeaning() {
+  if (!order.length) return;
+  shown = true;
+  $('meaning').classList.add('show');
+  $('ipa').classList.add('show');
+  afterShowButton();
+  afterShowNoButton();
+}
+function mark(v) {
+  if (!order.length) return;
+  const s = state();
+  s[order[idx]] = v;
+  save(s);
+  idx++;
+  render();
+}
+function resetNoButton() { $('noBtn').textContent = '不会，看意思'; }
+function afterShowNoButton() { $('noBtn').textContent = '加入重点，下一个'; }
+
+function noReview() {
+  if (!order.length) return;
+  if (!shown) {
+    showMeaning();
+    speakWord();
+    afterShowNoButton();
+  } else {
+    const s = state();
+    s[order[idx]] = 'unknown';
+    save(s);
+    idx++;
+    render();
+  }
+}
+function yesReview() {
+  if (!order.length) return;
+  if (!shown) {
+    showMeaning();
+    speakWord();
+  } else {
+    mark('known');
+  }
+}
+function next() { idx++; render(); }
+$('shuffleBtn').onclick = () => rebuildOrder(true);
+$('resetBtn').onclick = () => { localStorage.removeItem(key()); rebuildOrder(false); };
+$('yesBtn').onclick = yesReview;
+$('noBtn').onclick = noReview;
+$('soundBtn').onclick = (e) => { e.stopPropagation(); speakWord(); };
+$('card').onclick = showMeaning;
+document.querySelectorAll('.chip').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    rebuildOrder(false);
+  };
+});
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); shown ? next() : showMeaning(); }
+  if (e.key === 'ArrowRight') yesReview();
+  if (e.key === 'ArrowLeft') noReview();
+  if (e.key === 'ArrowDown') next();
+  if (e.key.toLowerCase() === 'p') speakWord();
+});
+rebuildOrder(false);
+</script>
+</body>
+</html>

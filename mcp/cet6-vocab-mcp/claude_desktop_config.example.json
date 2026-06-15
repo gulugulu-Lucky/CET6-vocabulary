@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cet6-vocab": {
+      "command": "uv",
+      "args": ["--directory", "/ABSOLUTE/PATH/TO/CET6-vocabulary/mcp/cet6-vocab-mcp", "run", "server.py"]
+    }
+  }
+}

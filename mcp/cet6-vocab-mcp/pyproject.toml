@@ -1,0 +1,9 @@
+[project]
+name = "cet6-vocab-mcp"
+version = "0.1.0"
+description = "Safe MCP tools for maintaining CET-6 vocabulary HTML pages."
+requires-python = ">=3.10"
+dependencies = ["mcp[cli]>=1.0.0"]
+
+[tool.uv]
+package = false

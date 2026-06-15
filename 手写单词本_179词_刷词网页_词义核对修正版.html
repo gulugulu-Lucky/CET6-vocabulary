@@ -57,6 +57,15 @@ button, .card, .word, .meaning, .ipa {
   -webkit-user-select: none;
 }
 
+
+.actions { display:grid !important; grid-template-columns:1fr 98px 1fr !important; gap:10px !important; margin-top:12px !important; align-items:stretch !important; }
+.middle-stack { display:grid; grid-template-rows:1fr 1fr; gap:8px; }
+.nav-btn { height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:16px; background:#f7f8ff; color:#4d5b79; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0 10px; }
+.inline-sound-btn { width:100%; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.sound-pocket { display:none !important; }
+@media (max-width:720px) { .actions { grid-template-columns:1fr 92px 1fr !important; } }
+
 </style>
 </head>
 <body>
@@ -85,7 +94,10 @@ button, .card, .word, .meaning, .ipa {
     </div>
     <div class="actions">
       <button class="bad" id="noBtn">不会，看意思</button>
-      <button class="sound-btn" id="soundBtn" title="播放读音" aria-label="播放读音">🔊</button>
+      <div class="middle-stack">
+        <button class="nav-btn" id="prevBtn" title="返回上一个">上一个</button>
+        <button class="inline-sound-btn" id="inlineSoundBtn" title="播放读音" aria-label="播放读音">🔊</button>
+      </div>
       <button class="good" id="yesBtn">会，显示意思</button>
     </div>
   </div>
@@ -97,6 +109,7 @@ let order = [];
 let idx = 0;
 let mode = 'all';
 let shown = false;
+let historyStack = [];
 const $ = id => document.getElementById(id);
 const key = () => 'handwritten_vocab_179_audio_ipa_v1';
 const state = () => JSON.parse(localStorage.getItem(key()) || '{}');
@@ -122,6 +135,7 @@ function shuffleArray(a) {
 }
 function resetYesButton() { $('yesBtn').textContent = '会，显示意思'; }
 function resetBothButtons() { resetYesButton(); resetNoButton(); }
+function updatePrevBtn() { $('prevBtn').disabled = historyStack.length === 0; }
 function afterShowButton() { $('yesBtn').textContent = '记住了，过'; }
 function rebuildOrder(shuffle=false) {
   order = filteredIndexes();
@@ -148,6 +162,7 @@ function render() {
     $('ipa').textContent = '';
     $('ipa').classList.remove('show');
     resetBothButtons();
+    updatePrevBtn();
     return;
   }
   if (idx >= order.length) idx = 0;
@@ -161,6 +176,7 @@ function render() {
   $('ipa').classList.remove('show');
   updateStats();
   resetBothButtons();
+  updatePrevBtn();
 }
 function speakWord() {
   const item = currentItem();
@@ -182,11 +198,26 @@ function showMeaning() {
 }
 function mark(v) {
   if (!order.length) return;
+  const dataIndex = order[idx];
   const s = state();
-  s[order[idx]] = v;
+  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
+  s[dataIndex] = v;
   save(s);
   idx++;
   render();
+}
+function goPrev() {
+  if (!historyStack.length) return;
+  const last = historyStack.pop();
+  const s = state();
+  if (last.prevMark === null) delete s[last.dataIndex];
+  else s[last.dataIndex] = last.prevMark;
+  save(s);
+  order = filteredIndexes();
+  idx = Math.max(0, order.indexOf(last.dataIndex));
+  render();
+  if (last.revealed) showMeaning();
+  updatePrevBtn();
 }
 function resetNoButton() { $('noBtn').textContent = '不会，看意思'; }
 function afterShowNoButton() { $('noBtn').textContent = '加入重点，下一个'; }
@@ -198,11 +229,7 @@ function noReview() {
     speakWord();
     afterShowNoButton();
   } else {
-    const s = state();
-    s[order[idx]] = 'unknown';
-    save(s);
-    idx++;
-    render();
+    mark('unknown');
   }
 }
 function yesReview() {
@@ -216,16 +243,18 @@ function yesReview() {
 }
 function next() { idx++; render(); }
 $('shuffleBtn').onclick = () => rebuildOrder(true);
-$('resetBtn').onclick = () => { localStorage.removeItem(key()); rebuildOrder(false); };
+$('resetBtn').onclick = () => { localStorage.removeItem(key()); historyStack = []; rebuildOrder(false); };
 $('yesBtn').onclick = yesReview;
 $('noBtn').onclick = noReview;
-$('soundBtn').onclick = (e) => { e.stopPropagation(); speakWord(); };
+$('prevBtn').onclick = goPrev;
+$('inlineSoundBtn').onclick = (e) => { e.stopPropagation(); speakWord(); };
 $('card').onclick = showMeaning;
 document.querySelectorAll('.chip').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     mode = btn.dataset.mode;
+    historyStack = [];
     rebuildOrder(false);
   };
 });
@@ -234,6 +263,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') yesReview();
   if (e.key === 'ArrowLeft') noReview();
   if (e.key === 'ArrowDown') next();
+  if (e.key === 'ArrowUp') goPrev();
   if (e.key.toLowerCase() === 'p') speakWord();
 });
 rebuildOrder(false);

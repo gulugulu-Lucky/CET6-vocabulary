@@ -1,4 +1,4 @@
-name: Unify vocabulary page controls
+name: Fix CET6 page bug
 
 on:
   push:
@@ -9,128 +9,25 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  fix:
     runs-on: ubuntu-latest
     if: github.actor != 'github-actions[bot]'
     steps:
       - uses: actions/checkout@v4
-      - name: Patch vocabulary pages
+      - name: Add missing historyStack variable
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
-
-          files = [
-              '阅读重点词_28词_刷词网页(1).html',
-              '手写单词本_179词_刷词网页_词义核对修正版.html',
-              '六级词汇闪过_前九单元词义终校_补identify版.html',
-          ]
-
-          css = '''
-          .actions { display:grid !important; grid-template-columns:1fr 98px 1fr !important; gap:10px !important; margin-top:12px !important; align-items:stretch !important; }
-          .middle-stack { display:grid; grid-template-rows:1fr 1fr; gap:8px; }
-          .nav-btn { height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:16px; background:#f7f8ff; color:#4d5b79; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0 10px; }
-          .inline-sound-btn { width:100%; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
-          button:disabled { opacity:.45; cursor:not-allowed; }
-          .sound-pocket { display:none !important; }
-          @media (max-width:720px) { .actions { grid-template-columns:1fr 92px 1fr !important; } }
-          '''
-
-          actions_html = '''<div class="actions">
-                <button class="bad" id="noBtn">不会，看意思</button>
-                <div class="middle-stack">
-                  <button class="nav-btn" id="prevBtn" title="返回上一个">上一个</button>
-                  <button class="inline-sound-btn" id="inlineSoundBtn" title="播放读音" aria-label="播放读音">🔊</button>
-                </div>
-                <button class="good" id="yesBtn">会，显示意思</button>
-              </div>'''
-
-          def ensure_css(text):
-              if '.middle-stack' not in text:
-                  text = text.replace('</style>', css + '\n</style>')
-              return text
-
-          def replace_actions(text):
-              if 'class="middle-stack"' in text:
-                  return text
-              pattern = r'<div class="actions">\s*<button class="bad" id="noBtn">.*?</button>\s*<button[^>]+id="(?:soundBtn|prevBtn)"[^>]*>.*?</button>\s*<button class="good" id="yesBtn">.*?</button>\s*</div>'
-              text = re.sub(pattern, actions_html, text, flags=re.S)
-              return text
-
-          def ensure_history_var(text):
-              if 'historyStack' not in text:
-                  text = text.replace('let shown = false;\nconst $', 'let shown = false;\nlet historyStack = [];\nconst $')
-              return text
-
-          def add_update_prev(text):
-              if 'function updatePrevBtn()' in text:
-                  return text
-              markers = [
-                  "function resetButtons() {\n  $('yesBtn').textContent = '会，显示意思';\n  $('noBtn').textContent = '不会，看意思';\n}\n",
-                  "function resetBothButtons() { resetYesButton(); resetNoButton(); }\n",
-              ]
-              for m in markers:
-                  if m in text:
-                      return text.replace(m, m + "function updatePrevBtn() { $('prevBtn').disabled = historyStack.length === 0; }\n")
-              return text
-
-          def update_render_calls(text):
-              text = text.replace('resetButtons();\n    return;', 'resetButtons();\n    updatePrevBtn();\n    return;')
-              text = text.replace('resetBothButtons();\n    return;', 'resetBothButtons();\n    updatePrevBtn();\n    return;')
-              text = text.replace('updateStats();\n  resetButtons();\n}', 'updateStats();\n  resetButtons();\n  updatePrevBtn();\n}')
-              text = text.replace('updateStats();\n  resetBothButtons();\n}', 'updateStats();\n  resetBothButtons();\n  updatePrevBtn();\n}')
-              text = text.replace("$('soundPocket').classList.remove('show');", '')
-              text = text.replace("$('soundPocket').classList.add('show');", '')
-              return text
-
-          def patch_mark_functions(text):
-              if 'function goPrev()' in text:
-                  return text
-              if 'function mark(v)' in text:
-                  text = re.sub(r"function mark\(v\) \{\n  if \(!order\.length\) return;\n  const s = state\(\);\n  s\[order\[idx\]\] = v;\n  save\(s\);\n  idx\+\+;\n  render\(\);\n\}",
-                  "function mark(v) {\n  if (!order.length) return;\n  const dataIndex = order[idx];\n  const s = state();\n  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });\n  s[dataIndex] = v;\n  save(s);\n  idx++;\n  render();\n}\nfunction goPrev() {\n  if (!historyStack.length) return;\n  const last = historyStack.pop();\n  const s = state();\n  if (last.prevMark === null) delete s[last.dataIndex];\n  else s[last.dataIndex] = last.prevMark;\n  save(s);\n  order = filteredIndexes();\n  idx = Math.max(0, order.indexOf(last.dataIndex));\n  render();\n  if (last.revealed) showMeaning();\n  updatePrevBtn();\n}", text)
-                  text = text.replace("const s = state();\n    s[order[idx]] = 'unknown';\n    save(s);\n    idx++;\n    render();", "mark('unknown');")
-                  return text
-              old = "function markKnown() {\n  if (!order.length) return;\n  const s = state();\n  s[order[idx]] = 'known';\n  save(s);\n  idx++;\n  render();\n}\nfunction markUnknown() {\n  if (!order.length) return;\n  const s = state();\n  s[order[idx]] = 'unknown';\n  save(s);\n  idx++;\n  render();\n}\n"
-              new = "function markKnown() {\n  if (!order.length) return;\n  const dataIndex = order[idx];\n  const s = state();\n  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });\n  s[dataIndex] = 'known';\n  save(s);\n  idx++;\n  render();\n}\nfunction markUnknown() {\n  if (!order.length) return;\n  const dataIndex = order[idx];\n  const s = state();\n  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });\n  s[dataIndex] = 'unknown';\n  save(s);\n  idx++;\n  render();\n}\nfunction goPrev() {\n  if (!historyStack.length) return;\n  const last = historyStack.pop();\n  const s = state();\n  if (last.prevMark === null) delete s[last.dataIndex];\n  else s[last.dataIndex] = last.prevMark;\n  save(s);\n  order = filteredIndexes();\n  idx = Math.max(0, order.indexOf(last.dataIndex));\n  render();\n  if (last.revealed) showMeaning();\n  updatePrevBtn();\n}\n"
-              return text.replace(old, new)
-
-          def patch_events(text):
-              text = text.replace("$('soundBtn').onclick = e => { e.stopPropagation(); speakWord(); };", "$('prevBtn').onclick = goPrev;\n$('inlineSoundBtn').onclick = e => { e.stopPropagation(); speakWord(); };")
-              text = text.replace("$('soundBtn').onclick = (e) => { e.stopPropagation(); speakWord(); };", "$('prevBtn').onclick = goPrev;\n$('inlineSoundBtn').onclick = (e) => { e.stopPropagation(); speakWord(); };")
-              if "$('prevBtn').onclick" not in text:
-                  text = text.replace("$('card').onclick = showMeaning;", "$('prevBtn').onclick = goPrev;\n$('inlineSoundBtn').onclick = e => { e.stopPropagation(); speakWord(); };\n$('card').onclick = showMeaning;")
-              text = text.replace("localStorage.removeItem(key()); rebuildOrder(false);", "localStorage.removeItem(key()); historyStack = []; rebuildOrder(false);")
-              text = text.replace("localStorage.removeItem(key());\n  rebuildOrder(false);", "localStorage.removeItem(key());\n  historyStack = [];\n  rebuildOrder(false);")
-              text = text.replace("mode = btn.dataset.mode;\n    rebuildOrder(false);", "mode = btn.dataset.mode;\n    historyStack = [];\n    rebuildOrder(false);")
-              text = text.replace("if (e.key === 'ArrowDown') next();\n  if (e.key.toLowerCase() === 'p') speakWord();", "if (e.key === 'ArrowDown') next();\n  if (e.key === 'ArrowUp') goPrev();\n  if (e.key.toLowerCase() === 'p') speakWord();")
-              return text
-
-          changed = False
-          for name in files:
-              p = Path(name)
-              text = p.read_text(encoding='utf-8')
-              old = text
-              text = ensure_css(text)
-              text = replace_actions(text)
-              text = ensure_history_var(text)
-              text = add_update_prev(text)
-              text = update_render_calls(text)
-              text = patch_mark_functions(text)
-              text = patch_events(text)
-              if text != old:
-                  p.write_text(text, encoding='utf-8')
-                  changed = True
-
-          if changed:
-              print('patched')
-          else:
-              print('already patched')
+          p = Path('六级词汇闪过_前九单元词义终校_补identify版.html')
+          text = p.read_text(encoding='utf-8')
+          if 'let historyStack' not in text:
+              text = text.replace('let shown = false;\n', 'let shown = false;\nlet historyStack = [];\n', 1)
+              p.write_text(text, encoding='utf-8')
           PY
-      - name: Commit changes
+      - name: Commit fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git diff --cached --quiet || git commit -m "Unify vocabulary page controls"
+          git add 六级词汇闪过_前九单元词义终校_补identify版.html
+          git diff --cached --quiet || git commit -m "Fix CET6 page navigation"
           git push

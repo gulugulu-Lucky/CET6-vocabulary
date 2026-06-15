@@ -58,6 +58,7 @@ uv add "mcp[cli]"
 ```bash
 uv run server.py lists
 uv run server.py build-preview --list all
+uv run server.py github-summary
 ```
 
 预览生成在：
@@ -66,7 +67,7 @@ uv run server.py build-preview --list all
 output/preview/
 ```
 
-## MCP 工具
+## MCP 工具｜第一阶段：本地安全维护
 
 - `list_vocab_lists()`：列出三个词库和词数
 - `search_word(word)`：查单词在哪
@@ -77,16 +78,45 @@ output/preview/
 - `delete_word(list_name, word)`：删除请求加入待确认改动
 - `show_diff()`：查看待确认改动
 - `build_preview(list_name)`：生成预览
-- `confirm_publish(confirm_phrase)`：确认发布，必须传 `确认发布`
+- `confirm_publish(confirm_phrase)`：确认发布到本地输出，必须传 `确认发布`
 - `reset_pending(confirm_phrase)`：清空草稿，必须传 `清空草稿`
+
+## MCP 工具｜第二阶段：GitHub 发布草稿
+
+这一阶段已经加上，但仍然不直接改 `main`。
+
+- `show_github_publish_summary()`：发布前预检，列出会改哪些文件
+- `publish_to_github_draft(confirm_phrase)`：创建新分支、提交更新、推送远程；必须传 `创建发布分支`
+- `create_github_publish_pr(confirm_phrase, branch, title)`：用 GitHub CLI 创建 PR；必须传 `创建PR`
+
+推荐流程：
+
+```text
+add_word / update_word / delete_word
+↓
+build_preview("all")
+↓
+show_diff()
+↓
+show_github_publish_summary()
+↓
+publish_to_github_draft("创建发布分支")
+↓
+create_github_publish_pr("创建PR")
+↓
+小猫在 GitHub 上检查 PR
+↓
+确认无误后合并
+```
 
 ## 安全规则
 
 1. 增删改不会直接改正式词库。
 2. 预览只生成本地 HTML。
 3. 只有 `confirm_publish("确认发布")` 才合并 pending。
-4. 发布前自动备份。
-5. 这个版本不会推 GitHub；GitHub 推送留到下一阶段。
+4. GitHub 发布阶段只创建新分支和 PR，不直接改 `main`。
+5. 发布前自动备份。
+6. 如果没有安装 GitHub CLI，`create_github_publish_pr` 会提示手动开 PR。
 
 ## 词库名称
 

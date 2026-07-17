@@ -1,0 +1,80 @@
+name: Add institution once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/add-institution-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Insert institution only
+        shell: python
+        run: |
+          from copy import deepcopy
+          import json
+          from pathlib import Path
+
+          page = Path("source-pages/cet6-flash-original.html")
+          text = page.read_text(encoding="utf-8")
+          marker = "const DATA = "
+          start = text.index(marker) + len(marker)
+          data, consumed = json.JSONDecoder().raw_decode(text[start:])
+          before = deepcopy(data)
+
+          all_words = [item["word"] for items in data.values() for item in items]
+          if "institution" in all_words:
+              raise SystemExit("institution already exists; refusing duplicate insertion")
+
+          unit = data["Unit 5"]
+          positions = [i for i, item in enumerate(unit) if item.get("word") == "institute"]
+          if len(positions) != 1:
+              raise SystemExit(f"Expected one institute in Unit 5, found {len(positions)}")
+
+          index = positions[0] + 1
+          unit.insert(index, {
+              "word": "institution",
+              "meaning": "n. 机构；制度；惯例",
+              "ipa": "/ˌɪnstɪˈtuːʃn/",
+          })
+
+          for name in before:
+              if name != "Unit 5" and data[name] != before[name]:
+                  raise SystemExit(f"Unexpected change in {name}")
+          restored = [item for item in data["Unit 5"] if item.get("word") != "institution"]
+          if restored != before["Unit 5"]:
+              raise SystemExit("Unit 5 changed beyond the institution insertion")
+          if data["Unit 5"][index - 1].get("word") != "institute":
+              raise SystemExit("institution was not placed after institute")
+          if data["Unit 5"][index + 1].get("word") != "engineer":
+              raise SystemExit("institution was not placed before engineer")
+
+          new_raw = json.dumps(data, ensure_ascii=False)
+          page.write_text(text[:start] + new_raw + text[start + consumed:], encoding="utf-8")
+          Path(".github/workflows/add-institution-once.yml").unlink()
+
+      - name: Validate and commit
+        run: |
+          git diff --check
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('source-pages/cet6-flash-original.html').read_text(encoding='utf-8')
+          assert text.count('"word": "institution"') == 1
+          assert '"word": "institute"' in text
+          assert '"word": "engineer"' in text
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source-pages/cet6-flash-original.html .github/workflows/add-institution-once.yml
+          git commit -m "Add institution to Unit 5"
+          git push origin main

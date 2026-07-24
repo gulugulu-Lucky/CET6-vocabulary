@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>手写单词本｜179词刷词｜底部读音按钮</title>
 <style>
 :root {
@@ -48,9 +48,12 @@ button:active { transform:none; }
   .card { min-height:385px; }
 }
 
-html, body, button, .card {
+html, body, button, select, .card {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+select, input {
+  font-size: 16px;
 }
 button, .card, .word, .meaning, .ipa {
   user-select: none;

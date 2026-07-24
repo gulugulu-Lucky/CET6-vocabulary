@@ -117,9 +117,25 @@ let shown = false;
 let historyStack = [];
 
 const $ = id => document.getElementById(id);
+const RESUME_KEY = 'cet6_resume_position_v1';
 const key = () => 'cet6_flash_733_audio_ipa_fixed_' + currentUnit;
 const state = () => JSON.parse(localStorage.getItem(key()) || '{}');
 const save = s => localStorage.setItem(key(), JSON.stringify(s));
+function readResumePosition() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RESUME_KEY) || 'null');
+    if (!saved || !Object.prototype.hasOwnProperty.call(DATA, saved.unit)) return null;
+    const validIndex = Number.isInteger(saved.dataIndex) && saved.dataIndex >= 0 && saved.dataIndex < DATA[saved.unit].length;
+    return { unit: saved.unit, dataIndex: validIndex ? saved.dataIndex : null };
+  } catch {
+    return null;
+  }
+}
+function saveResumePosition(dataIndex) {
+  try {
+    localStorage.setItem(RESUME_KEY, JSON.stringify({ unit: currentUnit, dataIndex }));
+  } catch {}
+}
 
 function unitWords() { return DATA[currentUnit] || []; }
 function currentItem() {
@@ -180,7 +196,10 @@ function render() {
     return;
   }
   if (idx >= order.length) idx = 0;
+  const dataIndex = order[idx];
   const item = currentItem();
+  if (!item) return;
+  saveResumePosition(dataIndex);
   shown = false;
   $('word').textContent = item.word;
   $('meaning').textContent = item.meaning;
@@ -304,7 +323,17 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowUp') goPrev();
   if (e.key.toLowerCase() === 'p') speakWord();
 });
-rebuildOrder(false);
+const savedResume = readResumePosition();
+if (savedResume) {
+  currentUnit = savedResume.unit;
+  $('unitSelect').value = currentUnit;
+  order = filteredIndexes();
+  const savedOrderIndex = order.indexOf(savedResume.dataIndex);
+  idx = savedOrderIndex >= 0 ? savedOrderIndex : 0;
+  render();
+} else {
+  rebuildOrder(false);
+}
 </script>
 </body>
 </html>

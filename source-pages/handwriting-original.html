@@ -114,9 +114,24 @@ let mode = 'all';
 let shown = false;
 let historyStack = [];
 const $ = id => document.getElementById(id);
+const RESUME_KEY = 'handwriting_resume_position_v1';
 const key = () => 'handwritten_vocab_179_audio_ipa_v1';
 const state = () => JSON.parse(localStorage.getItem(key()) || '{}');
 const save = s => localStorage.setItem(key(), JSON.stringify(s));
+function readResumePosition() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RESUME_KEY) || 'null');
+    const validIndex = saved && Number.isInteger(saved.dataIndex) && saved.dataIndex >= 0 && saved.dataIndex < DATA.length;
+    return validIndex ? saved.dataIndex : null;
+  } catch {
+    return null;
+  }
+}
+function saveResumePosition(dataIndex) {
+  try {
+    localStorage.setItem(RESUME_KEY, JSON.stringify({ dataIndex }));
+  } catch {}
+}
 
 function currentItem() {
   if (!order.length) return null;
@@ -169,7 +184,10 @@ function render() {
     return;
   }
   if (idx >= order.length) idx = 0;
+  const dataIndex = order[idx];
   const item = currentItem();
+  if (!item) return;
+  saveResumePosition(dataIndex);
   shown = false;
   $('unitTag').textContent = '手写单词本 · ' + item.source;
   $('word').textContent = item.word;
@@ -269,7 +287,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowUp') goPrev();
   if (e.key.toLowerCase() === 'p') speakWord();
 });
-rebuildOrder(false);
+const savedDataIndex = readResumePosition();
+order = filteredIndexes();
+const savedOrderIndex = order.indexOf(savedDataIndex);
+idx = savedOrderIndex >= 0 ? savedOrderIndex : 0;
+render();
 </script>
 </body>
 </html>

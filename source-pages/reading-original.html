@@ -13,7 +13,62 @@
 .inline-sound-btn { width:100%; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
 button:disabled { opacity:.45; cursor:not-allowed; }
 .sound-pocket { display:none !important; }
+.hint-toggle,
+.hint-note {
+  position:absolute;
+  z-index:4;
+}
+.hint-toggle {
+  right:auto;
+  bottom:auto;
+  padding:2px 4px;
+  border-radius:6px;
+  color:rgba(117,98,78,.48);
+  background:transparent;
+  box-shadow:none;
+  font-size:11px;
+  font-weight:500;
+  line-height:1.25;
+  white-space:nowrap;
+  opacity:.58;
+  filter:grayscale(.45);
+}
+.hint-toggle:hover,
+.hint-toggle:focus-visible {
+  color:rgba(117,98,78,.62);
+  background:transparent;
+  opacity:.75;
+}
+.hint-toggle:focus-visible {
+  outline:1px solid rgba(166,133,82,.32);
+  outline-offset:2px;
+}
+.hint-note {
+  right:18px;
+  bottom:16px;
+  width:min(310px,calc(100% - 36px));
+  padding:10px 13px 11px;
+  border-radius:16px;
+  color:#5d5143;
+  background:rgba(255,251,235,.96);
+  box-shadow:inset 0 0 0 1px rgba(214,184,120,.25),0 10px 28px rgba(93,77,50,.12);
+  text-align:left;
+  line-height:1.45;
+}
+.hint-toggle[hidden],
+.hint-note[hidden] { display:none; }
+.ipa:not(.show) ~ .hint-toggle { display:none; }
+.hint-note-title { display:block; margin-bottom:2px; color:#8a6f48; font-size:12px; font-weight:750; }
+.hint-note-text { display:block; font-size:14px; font-weight:500; }
+.hint-sense { display:block; }
+.hint-sense + .hint-sense { margin-top:2px; }
 @media (max-width:720px) { .actions { grid-template-columns:1fr 92px 1fr !important; } }
+@media (max-width:480px) {
+  .hint-note { right:14px; bottom:10px; }
+  .hint-note { width:calc(100% - 28px); padding:8px 12px 9px; }
+  .hint-note-text { font-size:13px; }
+}
+
 
 </style>
 </head>
@@ -23,7 +78,7 @@ button:disabled { opacity:.45; cursor:not-allowed; }
 <div class="modebar"><button class="chip active" data-mode="all">全部</button><button class="chip" data-mode="unknown">只刷不会</button><button class="chip" data-mode="unseen">只刷未刷</button></div>
 <div class="progress-wrap"><div class="progress" id="progress"></div></div>
 <div class="stats"><span id="posText"></span><span id="knownText"></span><span id="unknownText"></span></div>
-<div class="card" id="card"><div class="unit-tag" id="unitTag">阅读重点词</div><div class="word" id="word">Ready?</div><div class="meaning" id="meaning"></div><div class="ipa" id="ipa"></div></div>
+<div class="card" id="card"><div class="unit-tag" id="unitTag">阅读重点词</div><div class="word" id="word">Ready?</div><div class="meaning" id="meaning"></div><div class="ipa" id="ipa"></div><button type="button" class="hint-toggle" id="hintToggle" aria-expanded="false" hidden>💡 理解</button><button type="button" class="hint-note" id="hintNote" aria-label="关闭辅助理解" hidden><span class="hint-note-title" id="hintTitle">💡 核心理解</span><span class="hint-note-text" id="hintText"></span></button></div>
 <div class="actions">
       <button class="bad" id="noBtn">不会，看意思</button>
       <div class="middle-stack">
@@ -64,6 +119,183 @@ const savedDataIndex = readResumePosition();
 order = filteredIndexes();
 const savedOrderIndex = order.indexOf(savedDataIndex);
 idx = savedOrderIndex >= 0 ? savedOrderIndex : 0;
+render();
+</script>
+<script>
+const HINTS = Object.freeze({
+  sarcasm: { core: '嘴上递来一朵花，话里却藏着一根刺；听着像夸，真正落下的是挖苦。' },
+  disguise: {
+    senses: [
+      '共同画面：真实样子披上外衣。',
+      'v. 伪装；掩饰：藏起身份或想法。',
+      'n. 伪装：遮住真实的“外衣”。'
+    ]
+  },
+  subtle: { core: '像光线悄悄偏了一点：变化很小，不仔细看难以发现，却会改变整体感觉。' },
+  sparingly: { core: '像撒盐一样，只放一点，够用就停。' },
+  potent: { core: '看着未必猛烈，实际作用很强、很快见效。' },
+  wit: { core: '像一句话里闪过聪明火花：反应快，还让人会心一笑。' },
+  variability: { core: '同一件事每次表现不同，结果会来回波动。' },
+  generalisation: { core: '把许多个别现象收拢成一个共同结论。' },
+  principle: {
+    senses: [
+      '共同画面：撑住事物的底层规矩。',
+      '原则：做决定时守住的规矩。',
+      '原理：事情运转背后的规律。'
+    ]
+  },
+  generalise: {
+    senses: [
+      '共同动作：从几个例子往外推。',
+      '概括；归纳：收拢共同点。',
+      '推广：把结论用到更大范围。'
+    ]
+  },
+  pattern: {
+    senses: [
+      '共同画面：一种排法反复出现。',
+      '模式；规律：事情反复走同一路。',
+      '图案：线条或形状重复排列。'
+    ]
+  },
+  spark: {
+    senses: [
+      '共同画面：一粒火星点燃开端。',
+      'n. 火花：跳出来的那一点火星。',
+      'v. 激发；引发：像火星点燃一样，让想法或事件开始发生。'
+    ]
+  },
+  sustainability: { core: '像给未来留下一口井：今天取水，明天仍有水，事情才能长久继续。' },
+  whilst: {
+    senses: [
+      '① 当……时：两件事在同一段时间里发生。',
+      '② 然而：话锋一转，接出不同或相反的一面。'
+    ]
+  },
+  desolation: { core: '像人和生气都被抽走，只剩一片冷清空旷。' },
+  intermittent: { core: '像信号时有时无，中间不断出现停顿。' },
+  deplorable: { core: '糟到让人摇头叹气：既不好，又让人觉得遗憾。' },
+  division: { core: '像把一件大事拆开：既能划成不同部分，也能分给不同的人负责。' },
+  affordability: { core: '关键不是价格高低，而是你能不能负担得起。' },
+  urbanise: { core: '让一个地方慢慢长出城市的样子：道路、楼房和城市生活越来越多。' }
+});
+DATA.forEach(item => {
+  if (Object.prototype.hasOwnProperty.call(HINTS, item.word)) item.hint = HINTS[item.word];
+});
+
+function closeHint() {
+  $('hintNote').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'false');
+  $('hintNote').style.top = '';
+  $('hintNote').style.bottom = '';
+  $('hintNote').style.left = '';
+  $('hintNote').style.right = '';
+}
+function renderHintContent(hint) {
+  $('hintText').replaceChildren();
+  if (hint.core) {
+    $('hintTitle').textContent = '💡 核心理解';
+    $('hintText').textContent = hint.core;
+    return;
+  }
+  $('hintTitle').textContent = '💡 分义理解';
+  hint.senses.forEach(sense => {
+    const line = document.createElement('span');
+    line.className = 'hint-sense';
+    line.textContent = sense;
+    $('hintText').appendChild(line);
+  });
+}
+function updateHintEntry() {
+  const item = order.length ? currentItem() : null;
+  const hasHint = Boolean(item && item.hint);
+  $('hintToggle').hidden = !hasHint;
+  $('hintNote').hidden = true;
+  if (hasHint) {
+    renderHintContent(item.hint);
+    requestAnimationFrame(positionHintToggle);
+  }
+  else $('hintText').replaceChildren();
+}
+function positionHintToggle() {
+  const toggle = $('hintToggle');
+  const ipa = $('ipa');
+  if (toggle.hidden || getComputedStyle(ipa).display === 'none') return;
+  const cardRect = $('card').getBoundingClientRect();
+  const anchor = ipa.getBoundingClientRect();
+  const toggleRect = toggle.getBoundingClientRect();
+  const edge = innerWidth <= 480 ? 8 : 12;
+  const gap = 4;
+  let left = anchor.right - cardRect.left + gap;
+  let top = anchor.top - cardRect.top + (anchor.height - toggleRect.height) / 2;
+  left = Math.min(left, cardRect.width - edge - toggleRect.width);
+  top = Math.max(52, Math.min(top, cardRect.height - edge - toggleRect.height));
+  toggle.style.left = left + 'px';
+  toggle.style.top = top + 'px';
+}
+function placeHintNote() {
+  const note = $('hintNote');
+  const cardRect = $('card').getBoundingClientRect();
+  const ipaRect = $('ipa').getBoundingClientRect();
+  const actionsRect = document.querySelector('.actions').getBoundingClientRect();
+  const horizontalGap = innerWidth <= 480 ? 14 : 18;
+  const verticalGap = 8;
+  const cardBottomGap = innerWidth <= 480 ? 10 : 16;
+
+  note.style.left = 'auto';
+  note.style.right = 'auto';
+  note.style.top = 'auto';
+  note.style.bottom = 'auto';
+  note.style.maxWidth = 'none';
+  note.style.maxHeight = 'none';
+  note.style.overflowY = 'visible';
+  note.scrollTop = 0;
+
+  const naturalRect = note.getBoundingClientRect();
+  const safeLeft = cardRect.left + horizontalGap;
+  const safeRight = cardRect.right - horizontalGap;
+  const safeTop = ipaRect.bottom + verticalGap;
+  const safeBottom = Math.min(cardRect.bottom - cardBottomGap, actionsRect.top - verticalGap);
+  const availableWidth = Math.max(0, safeRight - safeLeft);
+  const availableHeight = Math.max(0, safeBottom - safeTop);
+
+  note.style.maxWidth = availableWidth + 'px';
+  const noteWidth = Math.min(note.getBoundingClientRect().width, availableWidth);
+  const centeredLeft = cardRect.left + (cardRect.width - noteWidth) / 2;
+  const clampedLeft = Math.max(safeLeft, Math.min(centeredLeft, safeRight - noteWidth));
+
+  note.style.left = clampedLeft - cardRect.left + 'px';
+  note.style.top = safeTop - cardRect.top + 'px';
+  note.style.maxHeight = availableHeight + 'px';
+  note.style.overflowY = naturalRect.height > availableHeight ? 'auto' : 'visible';
+}
+const renderWithoutHint = render;
+render = function() {
+  closeHint();
+  renderWithoutHint();
+  updateHintEntry();
+};
+$('hintToggle').onclick = event => {
+  event.stopPropagation();
+  $('hintToggle').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'true');
+  $('hintNote').hidden = false;
+  placeHintNote();
+};
+$('hintNote').onclick = event => {
+  event.stopPropagation();
+  closeHint();
+  updateHintEntry();
+};
+function scheduleHintPosition() {
+  requestAnimationFrame(() => {
+    positionHintToggle();
+    if (!$('hintNote').hidden) placeHintNote();
+  });
+}
+const hintPositionObserver = new ResizeObserver(scheduleHintPosition);
+['card', 'word', 'meaning', 'ipa'].forEach(id => hintPositionObserver.observe($(id)));
+window.addEventListener('resize', scheduleHintPosition);
 render();
 </script>
 </body>

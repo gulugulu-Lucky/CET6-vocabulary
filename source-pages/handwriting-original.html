@@ -67,7 +67,61 @@ button, .card, .word, .meaning, .ipa {
 .inline-sound-btn { width:100%; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
 button:disabled { opacity:.45; cursor:not-allowed; }
 .sound-pocket { display:none !important; }
+.hint-toggle,
+.hint-note {
+  position:absolute;
+  z-index:4;
+}
+.hint-toggle {
+  right:auto;
+  bottom:auto;
+  padding:2px 4px;
+  border-radius:6px;
+  color:rgba(117,98,78,.48);
+  background:transparent;
+  box-shadow:none;
+  font-size:11px;
+  font-weight:500;
+  line-height:1.25;
+  white-space:nowrap;
+  opacity:.58;
+  filter:grayscale(.45);
+}
+.hint-toggle:hover,
+.hint-toggle:focus-visible {
+  color:rgba(117,98,78,.62);
+  background:transparent;
+  opacity:.75;
+}
+.hint-toggle:focus-visible {
+  outline:1px solid rgba(166,133,82,.32);
+  outline-offset:2px;
+}
+.hint-note {
+  right:18px;
+  bottom:16px;
+  width:min(310px,calc(100% - 36px));
+  padding:10px 13px 11px;
+  border-radius:16px;
+  color:#5d5143;
+  background:rgba(255,251,235,.96);
+  box-shadow:inset 0 0 0 1px rgba(214,184,120,.25),0 10px 28px rgba(93,77,50,.12);
+  text-align:left;
+  line-height:1.45;
+}
+.hint-toggle[hidden],
+.hint-note[hidden] { display:none; }
+.ipa:not(.show) ~ .hint-toggle { display:none; }
+.hint-note-title { display:block; margin-bottom:2px; color:#8a6f48; font-size:12px; font-weight:750; }
+.hint-note-text { display:block; font-size:14px; font-weight:500; }
+.hint-sense { display:block; }
+.hint-sense + .hint-sense { margin-top:2px; }
 @media (max-width:720px) { .actions { grid-template-columns:1fr 92px 1fr !important; } }
+@media (max-width:480px) {
+  .hint-note { right:14px; bottom:10px; }
+  .hint-note { width:calc(100% - 28px); padding:8px 12px 9px; }
+  .hint-note-text { font-size:13px; }
+}
 
 </style>
 </head>
@@ -94,6 +148,8 @@ button:disabled { opacity:.45; cursor:not-allowed; }
       <div class="word" id="word">Ready?</div>
       <div class="meaning" id="meaning"></div>
       <div class="ipa" id="ipa"></div>
+      <button type="button" class="hint-toggle" id="hintToggle" aria-expanded="false" hidden>💡 理解</button>
+      <button type="button" class="hint-note" id="hintNote" aria-label="关闭辅助理解" hidden><span class="hint-note-title" id="hintTitle">💡 核心理解</span><span class="hint-note-text" id="hintText"></span></button>
     </div>
     <div class="actions">
       <button class="bad" id="noBtn">不会，看意思</button>
@@ -291,6 +347,769 @@ const savedDataIndex = readResumePosition();
 order = filteredIndexes();
 const savedOrderIndex = order.indexOf(savedDataIndex);
 idx = savedOrderIndex >= 0 ? savedOrderIndex : 0;
+render();
+</script>
+<script>
+const HINTS = Object.freeze({
+  compound: {
+    senses: [
+      '共同画面：多个部分叠在一起，形成新的整体。',
+      'n. 混合物；复合物：不同成分合在一起的东西。',
+      'adj. 复合的：由不止一个部分组成。',
+      'v. 混合：把不同部分合到一起。',
+      'v. 使加重：问题或影响一层层叠上去，变得更严重。'
+    ]
+  },
+  sanction: {
+    senses: [
+      '共同线索：都带着正式权力作出的决定。',
+      '批准；认可：官方点头，允许或支持。',
+      '制裁：官方出手，施加惩罚或限制。'
+    ]
+  },
+  snap: {
+    senses: [
+      '共同感觉：短促、突然的一下。',
+      '断裂：东西“啪”地一下断开。',
+      '拍照：快门迅速按下，抓住一瞬间。',
+      '厉声说：话突然又短又硬地甩出来。',
+      '快照：那一下拍住的瞬间画面。',
+      '啪嗒声：短促动作发出的清脆声响。'
+    ]
+  },
+  obscure: {
+    senses: [
+      '共同感觉：没有清楚地进入视线、认知或理解。',
+      '无名的：像藏在角落里，很少被人看见或知晓。',
+      '晦涩的；难懂的：意思像隔着雾，抓不清楚。',
+      '使模糊；掩盖：主动遮上一层，让原本的东西看不清。'
+    ]
+  },
+  digest: {
+    senses: [
+      '共同动作：把复杂的东西慢慢处理，再吸收进去。',
+      '消化：身体把食物处理成能吸收的部分。',
+      '领会：把信息一点点想明白，真正吸收。',
+      '承受：给自己时间，把难接受的事慢慢接住。',
+      '摘要；文摘：把较长内容压缩整理成短版本。'
+    ]
+  },
+  oblige: {
+    senses: [
+      '共同线索：压力或帮助落到人身上，让人产生必须回应的感觉。',
+      '迫使：情况或要求压过来，让人不得不做。',
+      '帮忙：回应别人的请求，替他解决一件事。',
+      '使感激不尽：得到及时的帮助后，对方非常感激。'
+    ]
+  },
+  derail: {
+    senses: [
+      '共同画面：火车离开原本的轨道。',
+      '出轨；脱轨：车轮真正滑出轨道。',
+      '阻挠：像把事情拨离路线，让计划无法顺利继续。'
+    ]
+  },
+  devour: {
+    senses: [
+      '共同感觉：又快又投入地把东西“吃进去”。',
+      '吞食：快速或大量地吃掉。',
+      '吞噬：像一口口侵占，最后把整体吃掉。',
+      '津津有味地阅读：读得很投入，像把内容一口口吃进去。'
+    ]
+  },
+  radiate: {
+    senses: [
+      '共同画面：从中心向四周散出去。',
+      '发散；辐射：光、热或能量从一点向外铺开。',
+      '显示：内在的情绪或感觉自然向外流露，让别人感受到。'
+    ]
+  },
+  staple: {
+    senses: [
+      '两组画面：一组把纸固定住，一组是生活中长期固定存在的常备事物。',
+      '订书钉：把纸钉在一起的小钉。',
+      '装订：用订书钉把纸固定在一起。',
+      '主要的：长期占据重要位置，不轻易缺席。',
+      '主食：日常反复吃、不可缺少的主要食物。',
+      '主要产品：长期构成供应或产出的主要部分。'
+    ]
+  },
+  compact: {
+    senses: [
+      '两组意思：一组把东西收紧，一组是双方正式约定。',
+      '紧凑的；小巧的：各部分靠得很近，整体占的空间不大。',
+      '压实：把松散的东西压紧在一起。',
+      '协议；契约：双方正式约定并共同遵守的内容。'
+    ]
+  },
+  bearing: {
+    senses: [
+      '关系：一件事与另一件事之间有联系。',
+      '方位：人或物所在、前进的方向。',
+      '轴承：托住旋转部件，让它平稳转动的机械零件。'
+    ]
+  },
+  boast: {
+    senses: [
+      '共同线索：把值得骄傲的东西摆出来。',
+      '吹嘘；夸口：主动把自己的优点说得格外显眼。',
+      '拥有：某个地方或事物以这项特点为特色、为傲。',
+      '值得骄傲的事物：被拿出来引以为傲的东西。'
+    ]
+  },
+  delicacy: {
+    senses: [
+      '周到：处理得细致谨慎，照顾到微妙之处。',
+      '棘手：事情敏感或难处理，需要格外小心。',
+      '美食：精致、特别、值得品尝的食物。'
+    ]
+  },
+  brew: {
+    senses: [
+      '共同画面：材料在容器或时间里慢慢形成新东西。',
+      '酿制：让原料经过时间，逐渐形成饮品。',
+      '冲泡饮料：加入水，把材料里的味道泡出来。',
+      '酝酿：事情或情绪在暗中逐渐形成。',
+      '混合：把不同材料放到一起。'
+    ]
+  },
+  align: {
+    senses: [
+      '共同画面：把不同东西排到同一条线上。',
+      '对准：把位置或方向调到同一条线上。',
+      '使一致：让想法、目标或行动朝向相同。',
+      '结盟：不同的人或团体站到同一阵线。'
+    ]
+  },
+  lavish: {
+    senses: [
+      '共同感觉：大量地给出、铺开或使用。',
+      '盛大的：场面或安排铺得很足，内容十分丰富。',
+      '慷慨的：愿意大量给予，不吝啬。',
+      '奢侈的：使用得过多，超出必要。',
+      '滥用；浪费：把资源过量或不恰当地用掉。'
+    ]
+  },
+  lofty: {
+    senses: [
+      '共同画面：处在高处。',
+      '高耸的：位置或外形真正很高。',
+      '崇高的：思想、目标或品质处在较高层次。',
+      '傲慢的：把自己看得高于别人。'
+    ]
+  },
+  relay: {
+    senses: [
+      '共同画面：从这一站交到下一站。',
+      '转发；传达：信息从一个人或位置传到下一个。',
+      '转播：声音、画面或信号被继续传出去。',
+      '接力赛：一名队员接一名队员地完成比赛。',
+      '中继：在中间接收后，再继续向下一段传送。'
+    ]
+  },
+  liable: {
+    senses: [
+      '两条方向：一条是需要承担，一条是某种情况较容易发生。',
+      '有责任的；有义务的：责任或义务落到某人身上，需要承担。',
+      '易于……的：某种情况较容易落到某人或某事上，发生的可能性较高。'
+    ]
+  },
+  collide: {
+    senses: [
+      '共同画面：两个东西迎面撞到一起。',
+      '碰撞；相撞：物体真正撞在一起。',
+      '冲突：观点、利益或力量互相顶住，无法同时顺利前进。'
+    ]
+  },
+  gear: {
+    senses: [
+      '共同线索：都在为运转或行动进行配置、调整。',
+      '齿轮：互相咬合并带动机械运转的轮。',
+      '排挡：调节车辆运行状态或动力的挡位。',
+      '装备：为某项行动准备好的用具。',
+      '使适合：有目的地调整某件事，使它适合特定目标或对象。'
+    ]
+  },
+  pine: {
+    senses: [
+      '松树：一种具体的树木。',
+      '苦苦思念：长时间强烈想念某人或某物，心里难受。'
+    ]
+  },
+  abort: {
+    senses: [
+      '共同方向：事情尚未完成，就提前停止。',
+      '使流产：孕育过程在完成前终止。',
+      '终止：让正在进行的过程停下来。',
+      '中途放弃：事情还未做完，主动停止继续。'
+    ]
+  },
+  flip: {
+    senses: [
+      '动作感觉：短促、轻快的一下，让位置、方向或状态迅速改变。',
+      '按开关：手指迅速拨动或按动，使状态切换。',
+      '轻抛：用轻快动作把东西抛起。',
+      'v. 翻转：让一面迅速转到另一面。',
+      '轻弹：手指轻轻快速地弹一下。',
+      'n. 翻转：那一次迅速翻面的动作。'
+    ]
+  },
+  magnify: {
+    senses: [
+      '共同变化：把原来的东西变得更大。',
+      '放大：让形象或细节看起来更大、更清楚。',
+      '夸大：在说法中把事实讲得超过实际。',
+      '使问题加重：让问题的影响扩大，变得更严重。'
+    ]
+  },
+  associate: {
+    senses: [
+      '联系：在两件事或两个对象之间建立关联。',
+      '交往：人与人来往并保持联系。',
+      '副的：处在辅助、配合主要角色的位置。',
+      '同事；伙伴：与自己一起工作、行动或合作的人。'
+    ]
+  },
+  artery: {
+    core: '像身体里的动脉承担主要输送任务：动脉把血液送到身体各处，干线则承担主要交通或运输流动。'
+  },
+  impart: {
+    core: '像把手里的东西递过去：传授，是把知识或经验交给别人；把某性质赋予，是让另一个对象带上这种特点。'
+  },
+  orient: {
+    core: '先找到位置，再调好状态：确定方向，是弄清所处位置和应朝哪里前进；使适应，是帮助某人或某事调整到适合新环境的状态。'
+  },
+  wrestle: {
+    senses: [
+      '共同动作：贴身用力，反复较量。',
+      '摔跤；扭打：身体贴近，用力争胜。',
+      '斗争：面对困难或问题反复较量，努力压过去。'
+    ]
+  },
+  dogma: {
+    core: '一套被固定下来、要求人接受并遵守的信念或说法，既可能成为信条，也可能变成教条。'
+  },
+  elicit: {
+    senses: [
+      '共同感觉：原本藏着或尚未出现的东西，被一步步带出来。',
+      '引出：让原本没有出现的内容显现。',
+      '套出：通过提问或方法，让对方说出藏着的信息。',
+      '引起：使某种反应或结果出现。'
+    ]
+  },
+  erect: {
+    senses: [
+      '共同画面：让东西立起来，或已经直立在那里。',
+      '建立：把某种事物搭建起来。',
+      '竖立：让物体从横放或倒下变成向上立着。',
+      '直立的：已经保持笔直站立的状态。'
+    ]
+  },
+  concrete: {
+    senses: [
+      '两组意思：一组讲内容是否清楚实际，一组讲建筑材料。',
+      '具体的：内容清楚、实际，不停留在模糊或抽象层面。',
+      '混凝土制的：由混凝土制成。',
+      '混凝土：一种建筑材料。'
+    ]
+  },
+  counsel: {
+    senses: [
+      'n. 建议：提供给别人参考的意见。',
+      'n. 法律顾问：提供法律方面建议的人。',
+      'v. 建议；劝告：主动向别人提出意见，希望他采取或避免某种行动。'
+    ]
+  },
+  mandate: {
+    senses: [
+      '共同线索：正式权力作出的允许或要求。',
+      'n. 授权：正式给予某人做某事的权力。',
+      'n. 命令：正式要求必须执行的指令。',
+      'v. 授权：正式允许并赋予权力。',
+      'v. 强制执行：正式要求某事必须实施。'
+    ]
+  },
+  patron: {
+    senses: [
+      '共同联系：两种角色都用实际行动支持某个地方、事业或服务。',
+      '赞助人：通过金钱或资源支持某项事业。',
+      '顾客：通过购买或消费支持一家店或服务。'
+    ]
+  },
+  entity: {
+    core: '像一个边界清楚的整体，能够被单独识别并独立存在。'
+  },
+  potent: {
+    senses: [
+      '共同感觉：力量、作用或性质都很强。',
+      '强有力的：具有很强的力量或影响。',
+      '有效力的：能够产生明显效果。',
+      '烈性的：性质或作用强烈。'
+    ]
+  },
+  hierarchy: {
+    core: '像阶梯一样，从上到下排成不同层级；每一层的位置和权力不同，形成等级制度或层次体系。'
+  },
+  rhetoric: {
+    senses: [
+      '共同联系：都在关注语言怎样被组织和使用。',
+      '修辞：为了让表达更有力量或效果而使用的语言技巧。',
+      '说辞：为了说明、说服或包装某件事而组织出来的一套话。'
+    ]
+  },
+  connotation: {
+    core: '一个词或表达除了眼前的字面，还会让人联想到或感受到另一层含义。'
+  },
+  parameter: {
+    senses: [
+      '共同线索：一些数值或条件既描述事物，也划定它可以怎样变化。',
+      '参数：用来描述或设定事物状态的数值或条件。',
+      '范围：允许变化或活动的边界。',
+      '限定因素：对结果或选择形成限制的条件。'
+    ]
+  },
+  refuse: {
+    senses: [
+      'v. 拒绝；回绝：明确不接受、不答应。',
+      'n. 垃圾；废物：被丢弃、不再需要的东西。'
+    ]
+  },
+  veteran: {
+    senses: [
+      '共同底色：都靠长期经历积下经验。',
+      '老兵：经历过长期服役或战斗的人。',
+      '老手：在某件事上做了很久、经验丰富的人。'
+    ]
+  },
+  suite: {
+    senses: [
+      '共同画面：多个彼此配套的部分组成一组。',
+      '套间：相互连通或配套的一组房间。',
+      '一套：彼此相关、一起使用的一组东西。',
+      '套装：按一组搭配在一起的物品。'
+    ]
+  },
+  eject: {
+    senses: [
+      '共同动作：用力量把人或物从里面推到外面。',
+      '驱逐：强制让某人离开原来的地方。',
+      '弹出：让某个物体迅速从内部出来。'
+    ]
+  },
+  excess: {
+    senses: [
+      '共同界线：都越过了正常需要、标准或限度。',
+      'adj. 额外的：超出原本需要或规定的部分。',
+      'adj. 过量的：数量多到超过合适范围。',
+      'n. 过量；过度：超出合理限度的状态或部分。'
+    ]
+  },
+  denounce: {
+    senses: [
+      '共同动作：把错误或问题公开指出来。',
+      '谴责：公开而严厉地批评某种行为。',
+      '告发：把某人的问题或行为报告、揭露出来。'
+    ]
+  },
+  unleash: {
+    senses: [
+      '像解开原本拴住力量的绳子，让它一下出来。',
+      '释放：解除限制，让原本被压住的人、物或力量出来。',
+      '发动：让一种力量或行动开始爆发。'
+    ]
+  },
+  terrace: {
+    senses: [
+      '排屋：一排相连、结构相近的房屋。',
+      '露天平台：建筑旁边或高处可供人活动的开放平台。'
+    ]
+  },
+  manipulate: {
+    senses: [
+      '共同动作：用手段控制，使其按自己的方式运行。',
+      '操作：控制或使用某个物体、设备或过程。',
+      '操纵：暗中或有目的地控制事物，使其朝自己想要的方向发展。'
+    ]
+  },
+  dedicate: {
+    senses: [
+      '共同联系：都带有正式、郑重地交付出去的感觉。',
+      '把……奉献给：把时间、精力或事物郑重投入某个目标。',
+      '为……举行落成典礼：以正式仪式宣布建筑或设施建成并投入使用。'
+    ]
+  },
+  liberal: {
+    senses: [
+      '共同感觉：不被僵硬规则紧紧限制，也愿意接纳不同。',
+      '自由的：限制较少，允许较多选择。',
+      '开明的：愿意接受新的或不同的观点。'
+    ]
+  },
+  subsistence: {
+    senses: [
+      '共同落点：维持最基本的日常所需。',
+      '生存：让生命和基本生活继续维持。',
+      '生计：用来维持日常生活的收入或方式。'
+    ]
+  },
+  turbulent: {
+    senses: [
+      '共同画面：像水流剧烈翻动，原本稳定的状态被不断搅乱。',
+      '汹涌的：水流或波浪剧烈翻动。',
+      '动荡的：局面持续变化，很不稳定。'
+    ]
+  },
+  integral: {
+    senses: [
+      '共同画面：一个整体不能缺块。',
+      '完整的：各部分齐全，组成一个完整整体。',
+      '不可或缺的：某个部分一旦缺少，整体就无法正常成立或运转。'
+    ]
+  },
+  delicate: {
+    senses: [
+      '共同感觉：细、轻，常常需要小心对待。',
+      '精致的：细节做得细腻、讲究。',
+      '易碎的：稍受碰撞或压力就容易损坏。',
+      '纤细的：形态细小、轻柔。'
+    ]
+  },
+  culminate: {
+    senses: [
+      '共同过程：一路向前发展，最后到达终点或最高点。',
+      '以……告终：前面的过程最终以某个结果收尾。',
+      '达到顶点：发展到最高或最强阶段。',
+      '结束：整个过程走到最后。'
+    ]
+  },
+  hack: {
+    senses: [
+      '非法侵入：未经允许进入计算机、系统或相关对象。',
+      '劈砍：用力、反复地砍。'
+    ]
+  },
+  conducive: {
+    core: '像一股顺势的推力：某种条件会把事情朝有利方向推动，帮助某个结果发生。'
+  },
+  contagious: {
+    senses: [
+      '像波纹一样，从一个对象传到另一个对象，并继续扩散。',
+      '传染性的：某种疾病或状态能够在人之间传播。',
+      '有感染力的：情绪、笑声等能够带动别人产生相似反应。'
+    ]
+  },
+  relentless: {
+    senses: [
+      '不停的：持续发生，没有明显停顿。',
+      '不懈的：持续努力，一直不松劲。',
+      '不屈不挠的：遇到阻力仍继续坚持。'
+    ]
+  },
+  overhaul: {
+    senses: [
+      '不是小修小补，而是把原来的东西全面动一遍。',
+      'n. 检修：一次全面检查和修理。',
+      'n. 改革：对原有制度或方式进行大范围调整。',
+      'v. 彻底检修；大修：把设备或事物全面拆查、修整。'
+    ]
+  },
+  irritate: {
+    senses: [
+      '外界一碰，原本平静的状态产生了不舒服的反应。',
+      '激怒：让人的情绪变得恼火、生气。',
+      '刺激：让身体或感受产生明显反应或不适。'
+    ]
+  },
+  situate: {
+    senses: [
+      '使位于：把某人或某物放在某个位置或环境中。',
+      '使联系：把某件事放进某种关系或背景中，使它与其他内容产生联系。'
+    ]
+  },
+  workshop: {
+    senses: [
+      '车间：人们实际制作、修理或生产东西的工作场所。',
+      '研讨会：一群人围绕某个主题共同学习、讨论或练习的活动。'
+    ]
+  },
+  bypass: {
+    senses: [
+      '旁路；旁道：避开主路线的另一条通路。',
+      '绕开：主动避开原来的对象、路线或环节，从旁边通过。'
+    ]
+  },
+  dub: {
+    senses: [
+      '把……称作：给某人或某物安上一个称呼。',
+      '给……配音：为已有画面重新加入或替换声音、对白。'
+    ]
+  },
+  grim: {
+    senses: [
+      '整体气氛沉重、不轻松，让人难以放松下来。',
+      '严峻的：局势或情况非常严重。',
+      '令人沮丧的：结果或前景让人失望、低落。',
+      '严肃的：神情或态度没有轻松、玩笑的感觉。'
+    ]
+  },
+  frantic: {
+    senses: [
+      '急到几乎失去从容和秩序。',
+      '发疯的：情绪或行为失去正常控制。',
+      '匆忙混乱的：因为非常着急，动作和局面显得杂乱无序。'
+    ]
+  },
+  cosy: {
+    senses: [
+      '从环境的舒服、安全感，延伸到人与人之间的亲近。',
+      '温暖舒适的：环境让人放松、舒服，愿意待在那里。',
+      '亲切的：待人方式让人感到亲近、没有距离。',
+      '密切的：人与人或关系靠得很近、联系紧密。'
+    ]
+  },
+  slash: {
+    senses: [
+      '动作底色：快速、有力地划过或切下一刀。',
+      '砍伤：用快速有力的切割动作造成伤口。',
+      '砍痕：这种切砍留下的痕迹。',
+      '斜线：像一道斜着划过去的线。',
+      '大幅削减：像一刀切掉很大一部分，快速而明显地减少。'
+    ]
+  },
+  bare: {
+    senses: [
+      '外面没有覆盖，本来应该有的东西也没有留下。',
+      '光秃秃的：表面缺少原本会覆盖或生长的东西。',
+      '裸露的：没有遮盖，直接露在外面。',
+      '空的：里面没有本应存在的内容。'
+    ]
+  },
+  sight: {
+    senses: [
+      '视力：眼睛看清东西的能力。',
+      '看见：东西进入视野，被眼睛看到。',
+      '景象：真正出现在眼前的画面。'
+    ]
+  },
+  ignite: {
+    senses: [
+      '像一颗火星落下，让原本没有开始的东西动起来。',
+      '点燃：让火真正开始燃烧。',
+      '激起：让某种情绪、反应或事情突然开始。'
+    ]
+  },
+  immerse: {
+    senses: [
+      '像整个人沉进去，被某种东西从四周包围。',
+      '使沉浸：让人完全投入某种活动、体验或状态。',
+      '使深陷：让人进入很深、难以轻易脱离的状态。'
+    ]
+  },
+  intuition: {
+    core: '没有一步步分析和推理，判断却直接冒了出来；直觉是这种直接的感觉或判断，直觉力是产生它的能力。'
+  },
+  tact: {
+    senses: [
+      '先敏锐看懂场面，再选择不会让别人难堪的处理方式。',
+      '机敏：能够快速察觉场合和别人的反应。',
+      '得体：说话、做事恰到好处，不让人觉得冒犯或尴尬。'
+    ]
+  },
+  dimension: {
+    senses: [
+      '像从不同方向去量、去看同一个事物。',
+      '方面：观察或讨论事物的一个角度。',
+      '范围：某件事延伸或覆盖到多大。',
+      '维度：用来描述事物的一个方向或尺度。'
+    ]
+  },
+  divert: {
+    senses: [
+      '转移：把原本朝向某处的人、物、注意力或方向移到别处。',
+      '改变：使原来的方向、用途或进程发生变化。',
+      '用于：把某物转去某个用途。'
+    ]
+  },
+  vocal: {
+    senses: [
+      '嗓音的：与人的声音、嗓音有关。',
+      '发声的：能够或正在发出声音。',
+      '直言不讳的：把自己的意见明确说出来，不藏着。'
+    ]
+  },
+  metaphor: {
+    senses: [
+      '借一个具体形象，去承载或照亮另一层意思。',
+      '隐喻：不直接说本来的意思，而借另一个形象来表达。',
+      '象征：一个形象承载了比自身更深的一层意义。'
+    ]
+  },
+  regime: {
+    senses: [
+      '政权：掌握并行使管理权力的一套统治力量。',
+      '管理制度：一套规定事情如何被管理、运行的制度。'
+    ]
+  },
+  displace: {
+    senses: [
+      '位置被改变：原本占据某处的人或物离开了原位置。',
+      '取代：新的事物占据原来属于另一个事物的位置。',
+      '转移：把人或物从原位置移到别处。',
+      '迫使……背井离乡：迫使人离开原本生活的地方。'
+    ]
+  },
+  breathe: {
+    senses: [
+      '两项都带着由内向外的轻微流动感。',
+      '呼吸：空气吸入、呼出身体。',
+      '散发：某种气息、感觉或特征从内部向外流露。'
+    ]
+  },
+  aggregate: {
+    senses: [
+      '许多分散的部分聚到一起，最后形成一个总量。',
+      'n. 总计；合计：多个部分加在一起得到的整体数量。',
+      'adj. 总数的：描述所有部分加起来后的整体数量。',
+      'v. 总计：加总后得到总数。',
+      'v. 汇集：把分散的部分聚到一起。'
+    ]
+  },
+  morale: {
+    core: '一个群体心里还有多少劲，愿不愿意继续行动并坚持下去。'
+  },
+  revive: {
+    senses: [
+      '原本衰弱、沉寂或停止的东西重新恢复活力。',
+      '复醒：从不活跃或失去意识的状态重新醒来。',
+      '复苏：原本衰弱或停滞的状态重新恢复。',
+      '复兴：原本衰落的事物重新发展、活跃。'
+    ]
+  },
+  aesthetic: {
+    senses: [
+      '审美的：与感受、判断美有关。',
+      '美学的：与研究美及艺术感受的体系有关。',
+      '美的：在视觉或感觉上具有美感。'
+    ]
+  }
+});
+DATA.forEach(item => {
+  if (Object.prototype.hasOwnProperty.call(HINTS, item.word)) item.hint = HINTS[item.word];
+});
+
+function closeHint() {
+  $('hintNote').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'false');
+  $('hintNote').style.top = '';
+  $('hintNote').style.bottom = '';
+  $('hintNote').style.left = '';
+  $('hintNote').style.right = '';
+}
+function renderHintContent(hint) {
+  $('hintText').replaceChildren();
+  if (hint.core) {
+    $('hintTitle').textContent = '💡 核心理解';
+    $('hintText').textContent = hint.core;
+    return;
+  }
+  $('hintTitle').textContent = '💡 分义理解';
+  hint.senses.forEach(sense => {
+    const line = document.createElement('span');
+    line.className = 'hint-sense';
+    line.textContent = sense;
+    $('hintText').appendChild(line);
+  });
+}
+function updateHintEntry() {
+  const item = order.length ? currentItem() : null;
+  const hasHint = Boolean(item && item.hint);
+  $('hintToggle').hidden = !hasHint;
+  $('hintNote').hidden = true;
+  if (hasHint) {
+    renderHintContent(item.hint);
+    requestAnimationFrame(positionHintToggle);
+  }
+  else $('hintText').replaceChildren();
+}
+function positionHintToggle() {
+  const toggle = $('hintToggle');
+  const ipa = $('ipa');
+  if (toggle.hidden || getComputedStyle(ipa).display === 'none') return;
+  const cardRect = $('card').getBoundingClientRect();
+  const anchor = ipa.getBoundingClientRect();
+  const toggleRect = toggle.getBoundingClientRect();
+  const edge = innerWidth <= 480 ? 8 : 12;
+  const gap = 4;
+  let left = anchor.right - cardRect.left + gap;
+  let top = anchor.top - cardRect.top + (anchor.height - toggleRect.height) / 2;
+  left = Math.min(left, cardRect.width - edge - toggleRect.width);
+  top = Math.max(52, Math.min(top, cardRect.height - edge - toggleRect.height));
+  toggle.style.left = left + 'px';
+  toggle.style.top = top + 'px';
+}
+function placeHintNote() {
+  const note = $('hintNote');
+  const cardRect = $('card').getBoundingClientRect();
+  const ipaRect = $('ipa').getBoundingClientRect();
+  const actionsRect = document.querySelector('.actions').getBoundingClientRect();
+  const horizontalGap = innerWidth <= 480 ? 14 : 18;
+  const verticalGap = 8;
+  const cardBottomGap = innerWidth <= 480 ? 10 : 16;
+
+  note.style.left = 'auto';
+  note.style.right = 'auto';
+  note.style.top = 'auto';
+  note.style.bottom = 'auto';
+  note.style.maxWidth = 'none';
+  note.style.maxHeight = 'none';
+  note.style.overflowY = 'visible';
+  note.scrollTop = 0;
+
+  const naturalRect = note.getBoundingClientRect();
+  const safeLeft = cardRect.left + horizontalGap;
+  const safeRight = cardRect.right - horizontalGap;
+  const safeTop = ipaRect.bottom + verticalGap;
+  const safeBottom = Math.min(cardRect.bottom - cardBottomGap, actionsRect.top - verticalGap);
+  const availableWidth = Math.max(0, safeRight - safeLeft);
+  const availableHeight = Math.max(0, safeBottom - safeTop);
+
+  note.style.maxWidth = availableWidth + 'px';
+  const noteWidth = Math.min(note.getBoundingClientRect().width, availableWidth);
+  const centeredLeft = cardRect.left + (cardRect.width - noteWidth) / 2;
+  const clampedLeft = Math.max(safeLeft, Math.min(centeredLeft, safeRight - noteWidth));
+
+  note.style.left = clampedLeft - cardRect.left + 'px';
+  note.style.top = safeTop - cardRect.top + 'px';
+  note.style.maxHeight = availableHeight + 'px';
+  note.style.overflowY = naturalRect.height > availableHeight ? 'auto' : 'visible';
+}
+const renderWithoutHint = render;
+render = function() {
+  closeHint();
+  renderWithoutHint();
+  updateHintEntry();
+};
+$('hintToggle').onclick = event => {
+  event.stopPropagation();
+  $('hintToggle').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'true');
+  $('hintNote').hidden = false;
+  placeHintNote();
+};
+$('hintNote').onclick = event => {
+  event.stopPropagation();
+  closeHint();
+  updateHintEntry();
+};
+function scheduleHintPosition() {
+  requestAnimationFrame(() => {
+    positionHintToggle();
+    if (!$('hintNote').hidden) placeHintNote();
+  });
+}
+const hintPositionObserver = new ResizeObserver(scheduleHintPosition);
+['card', 'word', 'meaning', 'ipa'].forEach(id => hintPositionObserver.observe($(id)));
+window.addEventListener('resize', scheduleHintPosition);
 render();
 </script>
 </body>

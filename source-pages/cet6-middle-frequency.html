@@ -236,6 +236,7 @@ button:disabled { opacity:.45; cursor:not-allowed; }
   </div>
 </div>
 
+<script src="../shared/study-progress.js"></script>
 <script src="../mid-frequency-vocabulary/middle-frequency-data.js"></script>
 <script>
 let currentUnit = Object.keys(DATA)[0];
@@ -244,6 +245,7 @@ let idx = 0;
 let mode = 'all';
 let shown = false;
 let historyStack = [];
+let unknownSnapshot = null;
 
 const $ = id => document.getElementById(id);
 const RESUME_KEY = 'cet6_middle_frequency_resume_v1';
@@ -296,8 +298,11 @@ function currentItem() {
 }
 function filteredIndexes() {
   const s = state();
+  if (mode === 'unknown') {
+    if (!Array.isArray(unknownSnapshot)) unknownSnapshot = StudyProgress.createUnknownSnapshot(unitWords().length, s);
+    return unknownSnapshot.slice();
+  }
   return unitWords().map((_, i) => i).filter(i => {
-    if (mode === 'unknown') return s[i] === 'unknown';
     if (mode === 'unseen') return !s[i];
     return true;
   });
@@ -383,8 +388,8 @@ function markKnown() {
   if (!order.length) return;
   const dataIndex = order[idx];
   const s = state();
-  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
-  s[dataIndex] = 'known';
+  const outcome = StudyProgress.applyMark(s, dataIndex, 'known', mode, { libraryId: 'middle', scope: currentUnit });
+  historyStack.push({ dataIndex, prevMark: outcome.previous, revealed: shown });
   save(s);
   idx++;
   render();
@@ -393,8 +398,8 @@ function markUnknown() {
   if (!order.length) return;
   const dataIndex = order[idx];
   const s = state();
-  historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
-  s[dataIndex] = 'unknown';
+  const outcome = StudyProgress.applyMark(s, dataIndex, 'unknown', mode, { libraryId: 'middle', scope: currentUnit });
+  historyStack.push({ dataIndex, prevMark: outcome.previous, revealed: shown });
   save(s);
   idx++;
   render();
@@ -406,7 +411,6 @@ function goPrev() {
   if (last.prevMark === null) delete s[last.dataIndex];
   else s[last.dataIndex] = last.prevMark;
   save(s);
-  order = filteredIndexes();
   idx = Math.max(0, order.indexOf(last.dataIndex));
   render();
   if (last.revealed) showMeaning();
@@ -444,12 +448,15 @@ Object.keys(DATA).forEach(u => {
 
 $('unitSelect').addEventListener('change', e => {
   currentUnit = e.target.value;
+  unknownSnapshot = mode === 'unknown' ? StudyProgress.createUnknownSnapshot(unitWords().length, state()) : null;
+  historyStack = [];
   rebuildOrder(false);
 });
 $('shuffleBtn').onclick = () => rebuildOrder(true);
 $('resetBtn').onclick = () => {
   localStorage.removeItem(key());
   historyStack = [];
+  unknownSnapshot = mode === 'unknown' ? [] : null;
   rebuildOrder(false);
 };
 $('yesBtn').onclick = yesReview;
@@ -464,6 +471,7 @@ document.querySelectorAll('.chip').forEach(btn => {
     btn.classList.add('active');
     mode = btn.dataset.mode;
     historyStack = [];
+    unknownSnapshot = mode === 'unknown' ? StudyProgress.createUnknownSnapshot(unitWords().length, state()) : null;
     rebuildOrder(false);
   };
 });

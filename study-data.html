@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf9f7">
+  <meta name="description" content="六级词汇四词库的本地学习数据和小猫单词花园。">
+  <title>学习数据｜六级刷词小仓库</title>
+  <style>
+    :root { --ink:#293247; --muted:#858b9a; --line:#ebeaf0; --page:#faf9f7; --white:#fff; --green:#62a778; --pink:#eaa0b8; }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust:100%; }
+    body { margin:0; min-height:100vh; background:var(--page); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
+    .wrap { width:min(100%,850px); margin:0 auto; padding:30px 24px 48px; }
+    .back { display:inline-flex; align-items:center; gap:5px; color:#737b8d; text-decoration:none; font-size:13px; }
+    .back:focus-visible { outline:3px solid #919df0; outline-offset:3px; }
+    header { margin-top:25px; }
+    .eyebrow { margin:0 0 12px; color:#8f91a0; font-size:11px; font-weight:750; letter-spacing:.18em; }
+    h1 { margin:0; font-size:clamp(29px,5vw,39px); line-height:1.25; letter-spacing:-.04em; }
+    .intro { margin:10px 0 0; color:#737b8d; font-size:14px; line-height:1.7; }
+    .summary { display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:12px; margin-top:28px; }
+    .panel, .metric { border:1px solid var(--line); border-radius:20px; background:var(--white); box-shadow:0 4px 20px rgba(43,47,68,.025); }
+    .metric { padding:18px; min-height:112px; }
+    .metric span { display:block; color:var(--muted); font-size:12px; }
+    .metric strong { display:block; margin-top:8px; font-size:26px; line-height:1.15; }
+    .metric small { display:block; margin-top:6px; color:#9297a4; font-size:11px; }
+    .progress-track { height:7px; margin-top:13px; overflow:hidden; border-radius:99px; background:#f0eff3; }
+    .progress-fill { width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#8a9bdc,#72b38a); }
+    h2 { margin:0; font-size:16px; letter-spacing:.01em; }
+    .section { margin-top:28px; }
+    .section-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 2px 12px; }
+    .section-head span { color:#9aa0ab; font-size:11px; }
+    .libraries { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .library { padding:17px 18px; }
+    .library-title { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .library-title strong { font-size:15px; }
+    .library-title span { color:#9aa0ab; font-size:11px; }
+    .numbers { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px; }
+    .numbers div { min-width:0; }
+    .numbers b { display:block; font-size:18px; }
+    .numbers small { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+    .trend { padding:18px; }
+    .bars { display:grid; grid-template-columns:repeat(7,1fr); align-items:end; gap:8px; height:150px; margin-top:12px; }
+    .day { display:grid; grid-template-rows:18px 1fr 18px; height:100%; text-align:center; }
+    .day-count, .day-label { color:#9398a4; font-size:10px; }
+    .bar-space { display:flex; align-items:flex-end; justify-content:center; }
+    .bar { width:min(28px,68%); min-height:3px; border-radius:8px 8px 3px 3px; background:linear-gradient(180deg,#e6a7bc,#8fa0df); transition:height .2s; }
+    .garden { display:grid; grid-template-columns:210px 1fr; gap:24px; align-items:center; padding:22px; overflow:hidden; }
+    .garden-art { min-height:170px; display:grid; place-items:center; border-radius:18px; background:linear-gradient(160deg,#f8fbf5,#fff5f8); }
+    .garden svg { width:185px; height:145px; overflow:visible; }
+    .stem, .leaf, .bud, .petal, .center { transform-origin:center; opacity:0; transition:opacity .2s; }
+    .stage-1 .stem, .stage-2 .stem, .stage-3 .stem, .stage-4 .stem { opacity:1; }
+    .stage-2 .leaf, .stage-3 .leaf, .stage-4 .leaf { opacity:1; }
+    .stage-3 .bud, .stage-4 .bud { opacity:1; }
+    .stage-4 .petal, .stage-4 .center { opacity:1; }
+    .stage-4 .bud { opacity:0; }
+    .garden-copy .stage-name { display:block; margin-top:9px; font-size:24px; }
+    .garden-copy p { margin:9px 0 0; color:#737b8d; font-size:13px; line-height:1.7; }
+    .water-track { height:8px; margin-top:16px; overflow:hidden; border-radius:99px; background:#eef2eb; }
+    .water-fill { height:100%; width:0; border-radius:inherit; background:#78b58b; }
+    .note { margin-top:24px; padding:16px 18px; border-radius:17px; background:#f3f2f5; color:#757c8b; font-size:12px; line-height:1.75; }
+    @media (max-width:650px) {
+      .wrap { padding:25px 18px calc(38px + env(safe-area-inset-bottom)); }
+      header { margin-top:20px; }
+      .summary { grid-template-columns:1fr 1fr; }
+      .summary .metric:first-child { grid-column:1/-1; }
+      .metric { min-height:98px; padding:16px; }
+      .libraries { grid-template-columns:1fr; }
+      .garden { grid-template-columns:1fr; gap:15px; padding:17px; }
+      .garden-art { min-height:145px; }
+      .garden svg { height:125px; }
+      .bars { gap:4px; height:130px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <a class="back" href="index.html" aria-label="返回六级刷词小仓库">‹ 返回词库</a>
+    <header>
+      <p class="eyebrow">LOCAL · STUDY DATA</p>
+      <h1>学习数据</h1>
+      <p class="intro">四个词库的进度都在这里，数据只保存在当前浏览器。</p>
+    </header>
+
+    <section class="summary" aria-label="学习概览">
+      <article class="metric">
+        <span>整体进度</span><strong id="overallPercent">0%</strong><small id="overallText">0 / 0 个词条</small>
+        <div class="progress-track"><div class="progress-fill" id="overallBar"></div></div>
+      </article>
+      <article class="metric"><span>今日复习</span><strong id="todayCount">0</strong><small>不同词条</small></article>
+      <article class="metric"><span>连续学习</span><strong id="streakCount">0 天</strong><small>今天未学习时延续至昨天</small></article>
+    </section>
+
+    <section class="section" aria-labelledby="library-heading">
+      <div class="section-head"><h2 id="library-heading">四词库进度</h2><span>累计状态</span></div>
+      <div class="libraries" id="libraries"></div>
+    </section>
+
+    <section class="section" aria-labelledby="trend-heading">
+      <div class="section-head"><h2 id="trend-heading">最近 7 天</h2><span>每天复习的不同词条数</span></div>
+      <div class="panel trend"><div class="bars" id="trendBars" aria-label="最近七天学习趋势"></div></div>
+    </section>
+
+    <section class="section" aria-labelledby="garden-heading">
+      <div class="section-head"><h2 id="garden-heading">小猫单词花园 🌷</h2><span>每天最多浇水一次</span></div>
+      <div class="panel garden">
+        <div class="garden-art" id="gardenArt" aria-hidden="true">
+          <svg viewBox="0 0 220 150" role="img">
+            <ellipse cx="110" cy="135" rx="62" ry="8" fill="#e7e2df"/>
+            <g aria-hidden="true">
+              <path d="M29 78 35 60l12 12c8-3 17-3 25 0l12-12 6 18c4 16-7 31-29 31S25 94 29 78Z" fill="#f0c7a9"/>
+              <circle cx="48" cy="84" r="2.5" fill="#596070"/><circle cx="70" cy="84" r="2.5" fill="#596070"/>
+              <path d="M57 90c3 3 5 3 8 0M61 89v4" fill="none" stroke="#596070" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M43 91 29 88M43 96 28 98M75 91l14-3M75 96l15 2" fill="none" stroke="#9c7c70" stroke-width="1.2" stroke-linecap="round"/>
+            </g>
+            <path d="M77 94h66l-9 38H86z" fill="#dca98e"/><path d="M73 88h74v12H73z" rx="5" fill="#e8bba3"/>
+            <path class="stem" d="M110 91c0-28 2-47 3-63" stroke="#68a878" stroke-width="6" stroke-linecap="round"/>
+            <path class="leaf" d="M109 69c-22-3-29-14-30-25 17 0 28 8 30 25Z" fill="#83bd8b"/>
+            <path class="leaf" d="M112 58c19-3 27-12 29-22-16-1-26 7-29 22Z" fill="#72ae7e"/>
+            <ellipse class="bud" cx="113" cy="28" rx="12" ry="18" fill="#eba7ba"/>
+            <g class="petal" fill="#eda6bd"><ellipse cx="113" cy="19" rx="10" ry="18"/><ellipse cx="96" cy="29" rx="10" ry="18" transform="rotate(-55 96 29)"/><ellipse cx="130" cy="29" rx="10" ry="18" transform="rotate(55 130 29)"/><ellipse cx="102" cy="43" rx="10" ry="18" transform="rotate(-120 102 43)"/><ellipse cx="124" cy="43" rx="10" ry="18" transform="rotate(120 124 43)"/></g>
+            <circle class="center" cx="113" cy="32" r="9" fill="#e2b85f"/>
+          </svg>
+        </div>
+        <div class="garden-copy">
+          <h2>今天的花园</h2><strong class="stage-name" id="gardenStage">一颗种子</strong>
+          <p id="gardenMessage">今天再完成 10 个不同词条，就能浇一次水。</p>
+          <div class="water-track"><div class="water-fill" id="waterBar"></div></div>
+          <p id="wateringDays">累计浇水 0 天</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="note">旧学习记录会准确计入累计进度；旧数据没有日期，因此每日趋势、连续天数和花园成长从本次升级后第一次实际标记单词开始。访问页面、查看释义、刷新或同一天重复标记同一词条都不会增加今日数量。不同设备和浏览器之间不会自动同步。</aside>
+  </main>
+
+  <script src="shared/study-progress.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    function renderDashboard() {
+      const data = StudyProgress.dashboard();
+      const percent = data.overall.total ? Math.round(data.overall.reviewed / data.overall.total * 100) : 0;
+      $('overallPercent').textContent = percent + '%';
+      $('overallText').textContent = `${data.overall.reviewed} / ${data.overall.total} 个词条`;
+      $('overallBar').style.width = percent + '%';
+      $('todayCount').textContent = data.today;
+      $('streakCount').textContent = data.streak + ' 天';
+
+      $('libraries').replaceChildren(...data.libraries.map(item => {
+        const article = document.createElement('article');
+        article.className = 'panel library';
+        article.innerHTML = `<div class="library-title"><strong>${item.icon} ${item.name}</strong><span>${item.total} 个词条</span></div><div class="numbers"><div><b>${item.reviewed}</b><small>已刷</small></div><div><b>${item.known}</b><small>掌握</small></div><div><b>${item.unknown}</b><small>待巩固</small></div></div>`;
+        return article;
+      }));
+
+      const max = Math.max(1, ...data.trend.map(item => item.count));
+      $('trendBars').replaceChildren(...data.trend.map(item => {
+        const day = document.createElement('div');
+        day.className = 'day';
+        day.innerHTML = `<span class="day-count">${item.count}</span><span class="bar-space"><span class="bar" style="height:${Math.max(3, item.count / max * 100)}%"></span></span><span class="day-label">${item.weekday}</span>`;
+        day.title = `${item.key}：${item.count} 个词条`;
+        return day;
+      }));
+
+      const garden = data.garden;
+      const stageIndex = garden.wateringDays >= 7 ? 4 : garden.wateringDays >= 4 ? 3 : garden.wateringDays >= 2 ? 2 : garden.wateringDays >= 1 ? 1 : 0;
+      $('gardenArt').className = `garden-art stage-${stageIndex}`;
+      $('gardenStage').textContent = `${garden.stage.icon} ${garden.stage.name}`;
+      $('gardenMessage').textContent = garden.wateredToday
+        ? `今天完成了 ${garden.todayCount} 个不同词条，已经浇过水啦。`
+        : `今天已完成 ${garden.todayCount} 个不同词条，再完成 ${garden.remainingToday} 个就能浇水。`;
+      $('waterBar').style.width = Math.min(100, garden.todayCount / garden.threshold * 100) + '%';
+      $('wateringDays').textContent = `累计浇水 ${garden.wateringDays} 天`;
+    }
+    renderDashboard();
+    window.addEventListener('storage', renderDashboard);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) renderDashboard(); });
+  </script>
+</body>
+</html>

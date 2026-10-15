@@ -26,7 +26,7 @@ MCP 只把“增删改词”放进 data/pending_changes.json
 python mcp/cet6-vocab-mcp/scripts/bootstrap_from_repo_html.py
 ```
 
-它会从仓库根目录三个稳定 HTML 中抽取词库，生成：
+它会从 `source-pages/` 下的三个真实刷词页面提取词库，不读取根目录的 iframe 入口，也不改动学习进度。生成：
 
 ```text
 mcp/cet6-vocab-mcp/data/words.json
@@ -61,10 +61,10 @@ uv run server.py build-preview --list all
 uv run server.py github-summary
 ```
 
-预览生成在：
+预览生成在（词库页面放在 `source-pages/` 子目录）：
 
 ```text
-output/preview/
+output/preview/source-pages/
 ```
 
 ## MCP 工具｜第一阶段：本地安全维护
@@ -114,8 +114,8 @@ create_github_publish_pr("创建PR")
 1. 增删改不会直接改正式词库。
 2. 预览只生成本地 HTML。
 3. 只有 `confirm_publish("确认发布")` 才合并 pending。
-4. GitHub 发布阶段只创建新分支和 PR，不直接改 `main`。
-5. 发布前自动备份。
+4. GitHub 发布阶段只创建新分支和 PR，不直接改 `main`；发布更新 `source-pages/` 内的页面，根目录 iframe 入口保持不变。
+5. 发布前自动备份词库数据。原有浏览器 `localStorage` 学习状态不受生成脚本影响。
 6. 如果没有安装 GitHub CLI，`create_github_publish_pr` 会提示手动开 PR。
 
 ## 词库名称

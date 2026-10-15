@@ -1,0 +1,112 @@
+// Regression checks for the user's "unknown stays unknown outside unknown-only" rule.
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const cache = '20261015-sticky-v2';
+
+function loadProgress() {
+  const values = new Map();
+  const nodes = new Map();
+  const storage = {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, String(value)); },
+    removeItem(key) { values.delete(key); }
+  };
+  const document = {
+    body: { appendChild(node) { nodes.set(node.id, node); } },
+    getElementById(id) { return nodes.get(id) || null; },
+    createElement(tagName) {
+      return {
+        tagName,
+        style: {},
+        dataset: {},
+        hidden: false,
+        attributes: {},
+        setAttribute(k, v) { this.attributes[k] = v; }
+      };
+    }
+  };
+  const window = {
+    document,
+    setTimeout: () => 1,
+    clearTimeout() {}
+  };
+  // Seed prior data before the shared module creates its one-time backup.
+  const legacy = '{"0":"unknown","1":"known"}';
+  storage.setItem('handwritten_vocab_179_audio_ipa_v1', legacy);
+  const code = fs.readFileSync(path.join(root, 'shared/study-progress.js'), 'utf8');
+  vm.runInNewContext(code, { window, localStorage: storage, Date, console, encodeURIComponent }, { filename: 'study-progress.js' });
+  return { progress: window.StudyProgress, storage, values, nodes, legacy };
+}
+
+test('old progress remains untouched and backup preserves old value', () => {
+  const { progress, storage, legacy } = loadProgress();
+  assert.equal(storage.getItem('handwritten_vocab_179_audio_ipa_v1'), legacy);
+  const backup = JSON.parse(storage.getItem(progress.BACKUP_KEY));
+  assert.equal(backup.states['handwriting:all'].raw, legacy);
+});
+
+test('unknown flag sticks when marked known in all or unseen mode', () => {
+  const { progress, nodes } = loadProgress();
+  for (const mode of ['all', 'unseen']) {
+    const state = { 0: 'unknown' };
+    const result = progress.applyMark(state, 0, 'known', mode, { libraryId: 'high', scope: 'Unit 1' });
+    assert.equal(state[0], 'unknown', 'normal mode must never release an unknown mark');
+    assert.equal(result.next, 'unknown');
+    assert.equal(nodes.get('reviewMarkNotice').dataset.kind, 'protected');
+    assert.match(nodes.get('reviewMarkNotice').textContent, /保留在.*不会/);
+  }
+});
+
+test('unknown-only mode can release words, but snapshot stays fixed', () => {
+  const { progress, nodes } = loadProgress();
+  const state = { 0: 'unknown', 1: 'unknown', 2: 'known' };
+  const locked = progress.createUnknownSnapshot(3, state);
+  assert.deepEqual(Array.from(locked), [0, 1]);
+  const result = progress.applyMark(state, 0, 'known', 'unknown', { libraryId: 'reading', scope: 'all' });
+  assert.equal(result.next, 'known');
+  assert.equal(state[0], 'known');
+  assert.deepEqual(Array.from(locked), [0, 1], 'current round must keep released words');
+  assert.deepEqual(Array.from(progress.createUnknownSnapshot(3, state)), [1], 'new round refreshes');
+  assert.equal(nodes.get('reviewMarkNotice').dataset.kind, 'released');
+});
+
+test('re-marking unknown wins over a previous known result', () => {
+  const { progress } = loadProgress();
+  const state = { 0: 'unknown' };
+  progress.applyMark(state, 0, 'known', 'unknown', { libraryId: 'reading', scope: 'all' });
+  progress.applyMark(state, 0, 'unknown', 'unknown', { libraryId: 'reading', scope: 'all' });
+  assert.equal(state[0], 'unknown');
+  assert.deepEqual(Array.from(progress.createUnknownSnapshot(1, state)), [0]);
+});
+
+test('all four real study pages and three legacy wrappers load the fresh module', () => {
+  const sources = [
+    'source-pages/cet6-flash-original.html',
+    'source-pages/cet6-middle-frequency.html',
+    'source-pages/handwriting-original.html',
+    'source-pages/reading-original.html'
+  ];
+  for (const source of sources) {
+    const html = fs.readFileSync(path.join(root, source), 'utf8');
+    assert.ok(html.includes('study-progress.js?v=' + cache), source);
+    assert.ok(html.includes('StudyProgress.applyMark'), source);
+    assert.ok(html.includes('unknownSnapshot'), source);
+  }
+  const wrappers = [
+    '六级词汇闪过_前九单元词义终校_补identify版.html',
+    '手写单词本_179词_刷词网页_词义核对修正版.html',
+    '阅读重点词_28词_刷词网页(1).html'
+  ];
+  for (const wrapper of wrappers) {
+    const html = fs.readFileSync(path.join(root, wrapper), 'utf8');
+    assert.ok(html.includes('?v=' + cache), wrapper);
+    assert.ok(!html.includes('eval('), wrapper);
+  }
+  const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.equal((index.match(new RegExp('\\?v=' + cache, 'g')) || []).length, 4);
+});

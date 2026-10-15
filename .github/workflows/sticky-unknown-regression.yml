@@ -1,0 +1,28 @@
+name: Sticky unknown review regression
+
+on:
+  push:
+    paths:
+      - 'shared/study-progress.js'
+      - 'source-pages/**'
+      - 'index.html'
+      - 'tests/sticky-unknown-rule.cjs'
+      - '.github/workflows/sticky-unknown-regression.yml'
+  pull_request:
+    paths:
+      - 'shared/study-progress.js'
+      - 'source-pages/**'
+      - 'index.html'
+      - 'tests/sticky-unknown-rule.cjs'
+      - '.github/workflows/sticky-unknown-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify unchanged learning state and protected review
+        run: node --test tests/sticky-unknown-rule.cjs

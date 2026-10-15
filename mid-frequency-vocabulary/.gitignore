@@ -1,0 +1,4 @@
+.artifact/
+.deps/
+tmp/
+*.inspect.ndjson

@@ -1,0 +1,426 @@
+{
+  "generatedAt": "2026-10-15T07:40:44.767Z",
+  "browser": "140.0.7339.81",
+  "viewportDesktop": "1365×900",
+  "viewportMobile": "390×844",
+  "totalChecks": 83,
+  "passedChecks": 83,
+  "failedChecks": 0,
+  "checks": [
+    {
+      "label": "首页 HTTP 载入成功",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "label": "首页存在中频词入口",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "首页中频词入口显示 1005 词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "中频词网页 HTTP 载入成功",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "label": "网页数据包含顺序正确的 12 个 Unit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "网页载入总词数为 1005",
+      "passed": true,
+      "detail": "1005"
+    },
+    {
+      "label": "单元选择器包含 12 项",
+      "passed": true,
+      "detail": "12"
+    },
+    {
+      "label": "Word List 1 首词与标准词表一致",
+      "passed": true,
+      "detail": "innovate / innovate"
+    },
+    {
+      "label": "Word List 1 网页词数正确",
+      "passed": true,
+      "detail": "1 / 84 当前｜0 / 84 已刷"
+    },
+    {
+      "label": "Word List 2 首词与标准词表一致",
+      "passed": true,
+      "detail": "proceed / proceed"
+    },
+    {
+      "label": "Word List 2 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "Word List 3 首词与标准词表一致",
+      "passed": true,
+      "detail": "particle / particle"
+    },
+    {
+      "label": "Word List 3 网页词数正确",
+      "passed": true,
+      "detail": "1 / 84 当前｜0 / 84 已刷"
+    },
+    {
+      "label": "Word List 4 首词与标准词表一致",
+      "passed": true,
+      "detail": "apt / apt"
+    },
+    {
+      "label": "Word List 4 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "Word List 5 首词与标准词表一致",
+      "passed": true,
+      "detail": "outer / outer"
+    },
+    {
+      "label": "Word List 5 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "Word List 6 首词与标准词表一致",
+      "passed": true,
+      "detail": "axis / axis"
+    },
+    {
+      "label": "Word List 6 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "Word List 7 首词与标准词表一致",
+      "passed": true,
+      "detail": "bonus / bonus"
+    },
+    {
+      "label": "Word List 7 网页词数正确",
+      "passed": true,
+      "detail": "1 / 84 当前｜0 / 84 已刷"
+    },
+    {
+      "label": "Word List 8 首词与标准词表一致",
+      "passed": true,
+      "detail": "wrestle / wrestle"
+    },
+    {
+      "label": "Word List 8 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "Word List 9 首词与标准词表一致",
+      "passed": true,
+      "detail": "intake / intake"
+    },
+    {
+      "label": "Word List 9 网页词数正确",
+      "passed": true,
+      "detail": "1 / 78 当前｜0 / 78 已刷"
+    },
+    {
+      "label": "Word List 10 首词与标准词表一致",
+      "passed": true,
+      "detail": "blog / blog"
+    },
+    {
+      "label": "Word List 10 网页词数正确",
+      "passed": true,
+      "detail": "1 / 81 当前｜0 / 81 已刷"
+    },
+    {
+      "label": "Word List 11 首词与标准词表一致",
+      "passed": true,
+      "detail": "scratch / scratch"
+    },
+    {
+      "label": "Word List 11 网页词数正确",
+      "passed": true,
+      "detail": "1 / 84 当前｜0 / 84 已刷"
+    },
+    {
+      "label": "Word List 12 首词与标准词表一致",
+      "passed": true,
+      "detail": "shatter / shatter"
+    },
+    {
+      "label": "Word List 12 网页词数正确",
+      "passed": true,
+      "detail": "1 / 85 当前｜0 / 85 已刷"
+    },
+    {
+      "label": "初始显示 Word List 1 首词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "初始隐藏中文释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "点击卡片显示中文释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "显示释义时同步显示音标",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "发音按钮调用当前单词",
+      "passed": true,
+      "detail": "innovate"
+    },
+    {
+      "label": "标记不会后进入下一词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "不会记录写入中频词独立存储键",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "中频词操作未覆盖高频词存储键",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "上一词功能返回前一词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "上一词功能恢复前一词原学习状态",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "标记会后进入下一词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后恢复学习位置",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "只刷不会模式正确过滤",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "只刷未刷模式排除已会词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "全部模式恢复完整单元顺序",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "打乱本单元改变刷词顺序",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "只刷不会模式显示重点词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "重置本单元清除不会记录",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "重置中频词记录不影响高频词记录",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "Word List 12 可正常开始刷词",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后恢复 Word List 12",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "刷新后恢复 Word List 12 的词内位置",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "学习进度使用中频词专用命名空间",
+      "passed": true,
+      "detail": "cet6_flash_733_audio_ipa_fixed_Unit 1, cet6_middle_frequency_progress_v1_Unit 12, cet6_middle_frequency_resume_v1"
+    },
+    {
+      "label": "完整流程未覆盖高频词记录",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手机视口无横向溢出",
+      "passed": true,
+      "detail": "{\"viewport\":390,\"scrollWidth\":390,\"cardVisible\":true,\"buttonsVisible\":true}"
+    },
+    {
+      "label": "手机视口卡片与操作按钮可见",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手机视口可显示释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页载入成功",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "label": "高频词原网页核心刷词控件存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页单元选择器有数据",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页可显示释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页发音按钮存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页无新增控制台错误",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "高频词原网页无新增脚本异常",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页载入成功",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "label": "手写单词本原网页 iframe 载入",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页核心刷词控件存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页词库数据已初始化",
+      "passed": true,
+      "detail": "pension"
+    },
+    {
+      "label": "手写单词本原网页可显示释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页发音按钮存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页无新增控制台错误",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "手写单词本原网页无新增脚本异常",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页载入成功",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "label": "阅读重点词原网页 iframe 载入",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页核心刷词控件存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页词库数据已初始化",
+      "passed": true,
+      "detail": "sarcasm"
+    },
+    {
+      "label": "阅读重点词原网页可显示释义",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页发音按钮存在",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页无新增控制台错误",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "阅读重点词原网页无新增脚本异常",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "本次浏览器测试无控制台错误",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "label": "本次浏览器测试无页面脚本异常",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

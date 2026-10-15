@@ -27,9 +27,9 @@ ALIASES = {
 LABELS = {"reading":"阅读重点词", "handwriting":"手写单词本", "cet6_flash":"六级词汇闪过"}
 TEMPLATE_FILES = {"reading":"reading_template.html", "handwriting":"handwriting_template.html", "cet6_flash":"unit_template.html"}
 OUTPUT_FILES = {
-    "reading":"阅读重点词_28词_刷词网页(1).html",
-    "handwriting":"手写单词本_179词_刷词网页_词义核对修正版.html",
-    "cet6_flash":"六级词汇闪过_前九单元词义终校_补identify版.html",
+    "reading":"source-pages/reading-original.html",
+    "handwriting":"source-pages/handwriting-original.html",
+    "cet6_flash":"source-pages/cet6-flash-original.html",
 }
 
 if FastMCP:
@@ -184,6 +184,9 @@ def render_one(words: dict[str, Any], list_name: str, out_dir: Path) -> Path:
     template = (TEMPLATES / TEMPLATE_FILES[lname]).read_text("utf-8")
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / OUTPUT_FILES[lname]
+    if template.count("__DATA_JSON__") != 1:
+        raise ValueError(f"Invalid template: {TEMPLATE_FILES[lname]}")
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(template.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False)), "utf-8")
     return out
 
@@ -212,6 +215,10 @@ def copy_publish_to_repo_root() -> list[Path]:
         if not src.exists():
             raise FileNotFoundError(f"缺少发布文件：{src.relative_to(ROOT)}。请先 confirm_publish('确认发布')。")
         dst = REPO_ROOT / filename
+        # Output paths are intentionally confined to source-pages; root iframe
+        # wrappers, which point to these pages, must never be overwritten.
+        if dst.parent != REPO_ROOT / "source-pages":
+            raise ValueError(f"Unsafe publication destination: {filename}")
         shutil.copy2(src, dst)
         copied.append(dst)
     return copied
@@ -323,7 +330,7 @@ def confirm_publish(confirm_phrase: str) -> str:
 @mcp.tool()
 def show_github_publish_summary() -> str:
     """第二阶段：显示如果发布到 GitHub 会改哪些内容。"""
-    lines = ["GitHub 发布预检：", pending_summary(), "", "将会更新根目录三个正式网页："]
+    lines = ["GitHub 发布预检：", pending_summary(), "", "将会更新三个词库源页面（根目录 iframe 入口保持不变）："]
     for filename in OUTPUT_FILES.values():
         lines.append(f"- {filename}")
     lines.extend([

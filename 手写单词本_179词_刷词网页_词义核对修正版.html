@@ -11,28 +11,15 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#fff}iframe
 </head>
 <body>
 <iframe id="vocabPage" src="source-pages/handwriting-original.html" title="手写单词本"></iframe>
-<div id="notice" class="notice" hidden>筛选修复没有成功载入，请刷新页面后重试。</div>
+<div id="notice" class="notice" hidden>刷词页面没有成功载入，请刷新页面后重试。</div>
 <script>
 const frame=document.getElementById('vocabPage');
 frame.addEventListener('load',()=>{
   try{
-    frame.contentWindow.eval(String.raw`
-      mark = function(v) {
-        if (!order.length) return;
-        const dataIndex = order[idx];
-        const s = state();
-        historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
-        s[dataIndex] = v;
-        save(s);
-        const staysInCurrentFilter = mode === 'all' || (mode === 'unknown' && v === 'unknown');
-        if (staysInCurrentFilter) idx++;
-        else order.splice(idx, 1);
-        render();
-      };
-    `);
+    if (!frame.contentWindow.StudyProgress) throw new Error('shared progress module unavailable');
     frame.focus();
   }catch(error){
-    console.error('Handwriting filter fix failed',error);
+    console.error('Handwriting page failed to initialize',error);
     document.getElementById('notice').hidden=false;
   }
 });

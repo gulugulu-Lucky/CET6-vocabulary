@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-10-15T14:10:36.213Z",
+  "baseUrl": "http://127.0.0.1:64083",
+  "browser": "Google Chrome (Playwright)",
+  "viewportCoverage": [
+    "1280x900",
+    "390x844"
+  ],
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "name": "首页入口、真实入口、数据总数与发音按钮",
+      "status": "passed",
+      "durationMs": 781
+    },
+    {
+      "name": "旧 localStorage 原值备份且仪表盘不伪造历史日期",
+      "status": "passed",
+      "durationMs": 220
+    },
+    {
+      "name": "高频词：不会状态优先、锁定轮次、空名单与刷新",
+      "status": "passed",
+      "durationMs": 452
+    },
+    {
+      "name": "中频词：不会状态优先、锁定轮次、空名单与刷新",
+      "status": "passed",
+      "durationMs": 441
+    },
+    {
+      "name": "手写单词本：不会状态优先、锁定轮次、空名单与刷新",
+      "status": "passed",
+      "durationMs": 568
+    },
+    {
+      "name": "阅读重点词：不会状态优先、锁定轮次、空名单与刷新",
+      "status": "passed",
+      "durationMs": 584
+    },
+    {
+      "name": "高频词 A/B/C 锁定循环、上一词撤销与打乱",
+      "status": "passed",
+      "durationMs": 519
+    },
+    {
+      "name": "高频词和中频词在只刷不会模式切换 Unit 时重建对应名单",
+      "status": "passed",
+      "durationMs": 251
+    },
+    {
+      "name": "高频词旧 iframe 兼容入口不再覆盖新判断规则",
+      "status": "passed",
+      "durationMs": 261
+    },
+    {
+      "name": "学习事件去重、跨日趋势、连续天数与每日浇水阈值",
+      "status": "passed",
+      "durationMs": 440
+    },
+    {
+      "name": "四个词库手机一屏布局与真实 wrapper 回归",
+      "status": "passed",
+      "durationMs": 401
+    }
+  ]
+}

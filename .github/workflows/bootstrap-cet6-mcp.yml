@@ -4,10 +4,11 @@ on:
   push:
     paths:
       - '.github/workflows/bootstrap-cet6-mcp.yml'
-      - 'mcp/cet6-vocab-mcp/**'
-      - '阅读重点词_28词_刷词网页(1).html'
-      - '手写单词本_179词_刷词网页_词义核对修正版.html'
-      - '六级词汇闪过_前九单元词义终校_补identify版.html'
+      - 'mcp/cet6-vocab-mcp/scripts/**'
+      - 'mcp/cet6-vocab-mcp/server.py'
+      - 'source-pages/reading-original.html'
+      - 'source-pages/handwriting-original.html'
+      - 'source-pages/cet6-flash-original.html'
   workflow_dispatch:
 
 permissions:
@@ -19,16 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Generate words and templates
+      - name: Generate words and templates from source pages
         run: |
+          python -m py_compile mcp/cet6-vocab-mcp/scripts/bootstrap_from_repo_html.py mcp/cet6-vocab-mcp/scripts/verify_bootstrap.py mcp/cet6-vocab-mcp/server.py
           python mcp/cet6-vocab-mcp/scripts/bootstrap_from_repo_html.py
           python mcp/cet6-vocab-mcp/server.py lists
           python mcp/cet6-vocab-mcp/server.py build-preview --list all
-      - name: Commit generated files
+          python mcp/cet6-vocab-mcp/scripts/verify_bootstrap.py
+      - name: Commit verified MCP data and templates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mcp/cet6-vocab-mcp
+          git add -- mcp/cet6-vocab-mcp/data/words.json mcp/cet6-vocab-mcp/data/backups/.gitkeep
+          git add -- mcp/cet6-vocab-mcp/templates/reading_template.html mcp/cet6-vocab-mcp/templates/handwriting_template.html mcp/cet6-vocab-mcp/templates/unit_template.html
           if git diff --cached --quiet; then
             echo "No generated MCP changes."
           else

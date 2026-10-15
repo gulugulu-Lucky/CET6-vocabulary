@@ -11,40 +11,15 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#fff}iframe
 </head>
 <body>
 <iframe id="vocabPage" src="source-pages/cet6-flash-original.html" title="六级词汇闪过"></iframe>
-<div id="notice" class="notice" hidden>筛选修复没有成功载入，请刷新页面后重试。</div>
+<div id="notice" class="notice" hidden>刷词页面没有成功载入，请刷新页面后重试。</div>
 <script>
 const frame=document.getElementById('vocabPage');
 frame.addEventListener('load',()=>{
   try{
-    frame.contentWindow.eval(String.raw`
-      function advanceAfterMark(value) {
-        const staysInCurrentFilter = mode === 'all' || (mode === 'unknown' && value === 'unknown');
-        if (staysInCurrentFilter) idx++;
-        else order.splice(idx, 1);
-        render();
-      }
-      markKnown = function() {
-        if (!order.length) return;
-        const dataIndex = order[idx];
-        const s = state();
-        historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
-        s[dataIndex] = 'known';
-        save(s);
-        advanceAfterMark('known');
-      };
-      markUnknown = function() {
-        if (!order.length) return;
-        const dataIndex = order[idx];
-        const s = state();
-        historyStack.push({ dataIndex, prevMark: s[dataIndex] ?? null, revealed: shown });
-        s[dataIndex] = 'unknown';
-        save(s);
-        advanceAfterMark('unknown');
-      };
-    `);
+    if (!frame.contentWindow.StudyProgress) throw new Error('shared progress module unavailable');
     frame.focus();
   }catch(error){
-    console.error('CET6 filter fix failed',error);
+    console.error('CET6 page failed to initialize',error);
     document.getElementById('notice').hidden=false;
   }
 });

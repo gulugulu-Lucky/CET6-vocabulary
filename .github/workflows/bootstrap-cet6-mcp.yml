@@ -27,7 +27,9 @@ jobs:
           python mcp/cet6-vocab-mcp/server.py lists
           python mcp/cet6-vocab-mcp/server.py build-preview --list all
           python mcp/cet6-vocab-mcp/scripts/verify_bootstrap.py
+      # Keep feature-branch validation read-only to avoid bot push races.
       - name: Commit verified MCP data and templates
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

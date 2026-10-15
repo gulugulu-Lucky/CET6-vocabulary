@@ -22,6 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Generate words and templates from source pages
         run: |
+          python -m py_compile mcp/cet6-vocab-mcp/scripts/bootstrap_from_repo_html.py mcp/cet6-vocab-mcp/scripts/verify_bootstrap.py mcp/cet6-vocab-mcp/server.py
           python mcp/cet6-vocab-mcp/scripts/bootstrap_from_repo_html.py
           python mcp/cet6-vocab-mcp/server.py lists
           python mcp/cet6-vocab-mcp/server.py build-preview --list all

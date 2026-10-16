@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const cache = '20261016-prev-stable-v3';
+const cache = '20261016-quiet-v4';
 
 function loadProgress() {
   const values = new Map();
@@ -57,8 +57,7 @@ test('unknown flag sticks when marked known in all or unseen mode', () => {
     const result = progress.applyMark(state, 0, 'known', mode, { libraryId: 'high', scope: 'Unit 1' });
     assert.equal(state[0], 'unknown', 'normal mode must never release an unknown mark');
     assert.equal(result.next, 'unknown');
-    assert.equal(nodes.get('reviewMarkNotice').dataset.kind, 'protected');
-    assert.match(nodes.get('reviewMarkNotice').textContent, /保留在.*不会/);
+    assert.equal(nodes.size, 0, 'normal review must not show any pop-up/toast');
   }
 });
 
@@ -72,7 +71,7 @@ test('unknown-only mode can release words, but snapshot stays fixed', () => {
   assert.equal(state[0], 'known');
   assert.deepEqual(Array.from(locked), [0, 1], 'current round must keep released words');
   assert.deepEqual(Array.from(progress.createUnknownSnapshot(3, state)), [1], 'new round refreshes');
-  assert.equal(nodes.get('reviewMarkNotice').dataset.kind, 'released');
+  assert.equal(nodes.size, 0, 'releasing unknown words must remain silent');
 });
 
 test('re-marking unknown wins over a previous known result', () => {
@@ -82,6 +81,45 @@ test('re-marking unknown wins over a previous known result', () => {
   progress.applyMark(state, 0, 'unknown', 'unknown', { libraryId: 'reading', scope: 'all' });
   assert.equal(state[0], 'unknown');
   assert.deepEqual(Array.from(progress.createUnknownSnapshot(1, state)), [0]);
+});
+
+test('every review action is silent: unknown, known, protected known and release', () => {
+  const { progress, nodes, storage } = loadProgress();
+  const state = {};
+  const meta = { libraryId: 'handwriting', scope: 'all' };
+  progress.applyMark(state, 0, 'unknown', 'all', meta);
+  assert.equal(state[0], 'unknown');
+  progress.applyMark(state, 0, 'known', 'all', meta);
+  assert.equal(state[0], 'unknown');
+  progress.applyMark(state, 0, 'known', 'unknown', meta);
+  assert.equal(state[0], 'known');
+  progress.applyMark(state, 1, 'known', 'all', meta);
+  assert.equal(state[1], 'known');
+  assert.equal(nodes.size, 0, 'must never append a popup, toast or alert container');
+  assert.equal(storage.getItem('handwritten_vocab_179_audio_ipa_v1'), '{"0":"unknown","1":"known"}',
+    'shared helper must not modify stored review data until caller explicitly saves');
+});
+
+test('normal reset remains immediate; inline hints are unchanged', () => {
+  for (const source of [
+    'source-pages/cet6-flash-original.html',
+    'source-pages/cet6-middle-frequency.html',
+    'source-pages/handwriting-original.html',
+    'source-pages/reading-original.html'
+  ]) {
+    const html = fs.readFileSync(path.join(root, source), 'utf8');
+    assert.ok(html.includes("localStorage.removeItem(key())"), source + ' should reset in one click');
+    assert.ok(!/\\b(?:alert|confirm|prompt)\\s*\\(/.test(html), source + ' must not show a native dialog');
+    assert.ok(!html.includes('reviewMarkNotice'), source + ' must not show review toast');
+  }
+  const shared = fs.readFileSync(path.join(root, 'shared/study-progress.js'), 'utf8');
+  assert.ok(!shared.includes('reviewMarkNotice'));
+  assert.ok(!shared.includes('showReviewNotice'));
+  for (const source of ['source-pages/handwriting-original.html', 'source-pages/reading-original.html']) {
+    const html = fs.readFileSync(path.join(root, source), 'utf8');
+    assert.ok(html.includes('hintToggle'), source + ' comprehension hint must be retained');
+    assert.ok(html.includes('hintNote'), source + ' inline hint note must be retained');
+  }
 });
 
 test('all four real study pages and three legacy wrappers load the fresh module', () => {

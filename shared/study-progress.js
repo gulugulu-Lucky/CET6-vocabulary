@@ -88,60 +88,13 @@
     return 'known';
   }
 
-  let noticeTimer = null;
-
-  // Keep the original progress values intact and explain sticky marks at the
-  // point of interaction, so mobile Safari users can verify what happened.
-  function showReviewNotice(message, kind) {
-    if (!global.document || !global.document.body) return;
-    let node = global.document.getElementById('reviewMarkNotice');
-    if (!node) {
-      node = global.document.createElement('div');
-      node.id = 'reviewMarkNotice';
-      node.setAttribute('role', 'status');
-      node.setAttribute('aria-live', 'polite');
-      node.style.cssText = [
-        'position:fixed',
-        'z-index:1000',
-        'left:12px',
-        'right:12px',
-        'bottom:calc(100px + env(safe-area-inset-bottom))',
-        'width:max-content',
-        'max-width:calc(100% - 24px)',
-        'margin:0 auto',
-        'padding:10px 15px',
-        'border-radius:15px',
-        'background:rgba(37,48,71,.96)',
-        'color:#fff',
-        'box-shadow:0 8px 25px rgba(37,48,71,.2)',
-        'font:600 13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif',
-        'text-align:center',
-        'pointer-events:none',
-        'white-space:normal'
-      ].join(';');
-      global.document.body.appendChild(node);
-    }
-    node.dataset.kind = kind;
-    node.textContent = message;
-    node.hidden = false;
-    if (noticeTimer != null) global.clearTimeout(noticeTimer);
-    noticeTimer = global.setTimeout(() => { node.hidden = true; }, 2400);
-  }
-
+  // Review judgments update storage silently. The review card and counters
+  // already reflect progress; never cover the mobile controls with a toast.
   function applyMark(state, dataIndex, requested, mode, meta) {
     const previous = state[dataIndex] ?? null;
     const next = resolveMark(previous, requested, mode);
     if (next) state[dataIndex] = next;
     recordMark(meta.libraryId, meta.scope, dataIndex);
-    if (requested === 'known' && previous === 'unknown') {
-      if (mode === 'unknown') {
-        showReviewNotice('✅ 本轮仍会继续刷；离开「只刷不会」后才更新名单', 'released');
-      } else {
-        showReviewNotice('📌 仍保留在「不会」词库；只有在「只刷不会」里点会才能移出', 'protected');
-      }
-    } else if (requested === 'unknown' && previous !== 'unknown') {
-      showReviewNotice('📌 已加入「不会」词库', 'added');
-    }
     return { previous, next };
   }
 

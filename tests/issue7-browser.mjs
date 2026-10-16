@@ -365,12 +365,28 @@ for (const library of libraries) {
 
       await surface.locator('#prevBtn').click();
       assert.equal(await surface.locator('#word').textContent(), firstWord);
+      assert.equal(await surface.locator('#meaning').isVisible(), false, '返回上一词时必须先隐藏中文');
+      assert.equal(await surface.locator('#ipa').isVisible(), false, '返回上一词时必须先隐藏音标');
+      assert.match(await surface.locator('#yesBtn').textContent(), /会，显示意思/, '上一词须从正面重新开始');
       assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown',
-        '关键回归：上一个只是回看，不能取消刚标记的不会');
+        '上一个只是回看，不能取消刚标记的不会');
       assert.match(await surface.locator('#unknownText').textContent(), /1/);
 
-      // Returning to a revealed card should need only one click to mark it.
-      assert.match(await surface.locator('#yesBtn').textContent(), /记住了/);
+      // Returning to a word-only card: tap unknown once to reveal, again to save.
+      await surface.locator('#noBtn').click();
+      assert.equal(await surface.locator('#meaning').isVisible(), true, '返回后点不会应显示释义');
+      assert.equal(await surface.locator('#ipa').isVisible(), true, '返回后点不会应显示音标');
+      await surface.locator('#noBtn').click();
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown');
+      await surface.locator('#prevBtn').click();
+      assert.equal(await surface.locator('#word').textContent(), firstWord);
+      assert.equal(await surface.locator('#meaning').isVisible(), false, '再次上一词也应隐藏中文');
+      assert.equal(await surface.locator('#ipa').isVisible(), false, '再次上一词也应隐藏音标');
+
+      await surface.locator('#yesBtn').click();
+      assert.equal(await surface.locator('#meaning').isVisible(), true, '返回后第一下会只揭示意思');
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown',
+        '揭示释义不得改变任何学习记录');
       await surface.locator('#yesBtn').click();
       assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown',
         '普通模式在回看卡片后点会，也必须保留不会');
@@ -385,6 +401,9 @@ for (const library of libraries) {
       assert.deepEqual((await snapshot(surface)).order, [0], '当前快照仍保留已掌握的词');
 
       await surface.locator('#prevBtn').click();
+      assert.equal(await surface.locator('#word').textContent(), firstWord);
+      assert.equal(await surface.locator('#meaning').isVisible(), false, '只刷不会返回上一词也必须隐藏中文');
+      assert.equal(await surface.locator('#ipa').isVisible(), false, '只刷不会返回上一词也必须隐藏音标');
       assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'known',
         '上一个也不能悄悄撤销只刷不会中的已掌握标记');
       await setMode(surface, 'all');

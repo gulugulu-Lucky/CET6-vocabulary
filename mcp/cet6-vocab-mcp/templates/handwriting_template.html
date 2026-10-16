@@ -292,7 +292,7 @@ button:disabled { opacity:.45; cursor:not-allowed; }
   </div>
 </div>
 
-<script src="../shared/study-progress.js?v=20261016-quiet-v4"></script>
+<script src="../shared/study-progress.js?v=20261016-prev-word-only-v5"></script>
 <script>
 const DATA = __DATA_JSON__;
 let order = [];
@@ -426,7 +426,7 @@ function goPrev() {
   if (previousIndex < 0) { updatePrevBtn(); return; }
   idx = previousIndex;
   render();
-  if (last.revealed) showMeaning();
+  // Always return to the word-only front, just like a new card.
   updatePrevBtn();
 }
 function resetNoButton() { $('noBtn').textContent = '不会，看意思'; }

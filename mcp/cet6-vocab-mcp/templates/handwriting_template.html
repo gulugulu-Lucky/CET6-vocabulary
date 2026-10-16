@@ -292,7 +292,7 @@ button:disabled { opacity:.45; cursor:not-allowed; }
   </div>
 </div>
 
-<script src="../shared/study-progress.js?v=20261015-sticky-v2"></script>
+<script src="../shared/study-progress.js?v=20261016-prev-stable-v3"></script>
 <script>
 const DATA = __DATA_JSON__;
 let order = [];
@@ -421,11 +421,10 @@ function mark(v) {
 function goPrev() {
   if (!historyStack.length) return;
   const last = historyStack.pop();
-  const s = state();
-  if (last.prevMark === null) delete s[last.dataIndex];
-  else s[last.dataIndex] = last.prevMark;
-  save(s);
-  idx = Math.max(0, order.indexOf(last.dataIndex));
+  // Returning to a card must never undo its stored known/unknown result.
+  const previousIndex = order.indexOf(last.dataIndex);
+  if (previousIndex < 0) { updatePrevBtn(); return; }
+  idx = previousIndex;
   render();
   if (last.revealed) showMeaning();
   updatePrevBtn();

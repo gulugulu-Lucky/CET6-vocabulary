@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const cache = '20261015-sticky-v2';
+const cache = '20261016-prev-stable-v3';
 
 function loadProgress() {
   const values = new Map();

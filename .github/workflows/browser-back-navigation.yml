@@ -1,0 +1,36 @@
+name: CET6 previous-card browser regression
+
+on:
+  push:
+    paths:
+      - '.github/workflows/browser-back-navigation.yml'
+      - 'tests/issue7-browser.mjs'
+      - 'source-pages/**'
+      - 'shared/**'
+      - 'index.html'
+  pull_request:
+    paths:
+      - '.github/workflows/browser-back-navigation.yml'
+      - 'tests/issue7-browser.mjs'
+      - 'source-pages/**'
+      - 'shared/**'
+      - 'index.html'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright browser
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+      - name: Test all four real vocabulary entries in Chrome
+        run: node tests/issue7-browser.mjs

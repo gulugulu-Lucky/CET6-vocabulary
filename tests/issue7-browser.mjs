@@ -96,7 +96,10 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const BASE = `http://127.0.0.1:${server.address().port}`;
 await mkdir(RESULTS_DIR, { recursive: true });
 
-const browser = await chromium.launch({ headless: true, executablePath: CHROME });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.CHROME_PATH || process.platform === 'win32' ? { executablePath: CHROME } : {})
+});
 const results = [];
 
 function watchPage(page, errors) {
@@ -344,7 +347,55 @@ for (const library of libraries) {
   });
 }
 
-await run('高频词 A/B/C 锁定循环、上一词撤销与打乱', async () => {
+for (const library of libraries) {
+  await run(`${library.name}：不会 → 上一个 → 全部模式再点会 → 重点仍保留`, async () => {
+    const { context, errors } = await newContext({ width: 390, height: 844 });
+    try {
+      await prepareStorage(context);
+      const page = await context.newPage();
+      const surface = await openLibrary(page, library);
+      const firstWord = await surface.locator('#word').textContent();
+
+      await mark(surface, 'unknown');
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown');
+      assert.match(await surface.locator('#unknownText').textContent(), /1/);
+
+      await surface.locator('#prevBtn').click();
+      assert.equal(await surface.locator('#word').textContent(), firstWord);
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown',
+        '关键回归：上一个只是回看，不能取消刚标记的不会');
+      assert.match(await surface.locator('#unknownText').textContent(), /1/);
+
+      // Returning to a revealed card should need only one click to mark it.
+      assert.match(await surface.locator('#yesBtn').textContent(), /记住了/);
+      await surface.locator('#yesBtn').click();
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown',
+        '普通模式在回看卡片后点会，也必须保留不会');
+
+      await setMode(surface, 'unknown');
+      assert.deepEqual((await snapshot(surface)).order, [0], '该词仍须出现在只刷不会列表');
+      assert.equal(await surface.locator('#word').textContent(), firstWord);
+
+      await mark(surface, 'known');
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'known',
+        '只刷不会才可以把词变为会');
+      assert.deepEqual((await snapshot(surface)).order, [0], '当前快照仍保留已掌握的词');
+
+      await surface.locator('#prevBtn').click();
+      assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'known',
+        '上一个也不能悄悄撤销只刷不会中的已掌握标记');
+      await setMode(surface, 'all');
+      await setMode(surface, 'unknown');
+      assert.deepEqual((await snapshot(surface)).order, [], '切换模式后才真正移出不会词库');
+
+      assertNoErrors(errors, `${library.name} 上一个不撤销回归`);
+    } finally {
+      await context.close();
+    }
+  });
+}
+
+await run('高频词 A/B/C 锁定循环、上一词保留标记与打乱', async () => {
   const library = libraries[0];
   const { context, errors } = await newContext();
   try {
@@ -382,7 +433,7 @@ await run('高频词 A/B/C 锁定循环、上一词撤销与打乱', async () =>
     await surface.locator('#prevBtn').click();
     locked = await snapshot(surface);
     assert.equal(locked.currentWord, words[0]);
-    assert.equal(locked.currentState[0], 'unknown', '上一词应恢复原状态');
+    assert.equal(locked.currentState[0], 'known', '上一词只导航，不能撤销已保存的状态');
     assert.deepEqual(locked.order, [0, 1, 2], '上一词不得破坏锁定名单');
 
     await surface.evaluate(key => localStorage.setItem(key, JSON.stringify({ 0: 'unknown', 1: 'unknown', 2: 'unknown' })), library.key);

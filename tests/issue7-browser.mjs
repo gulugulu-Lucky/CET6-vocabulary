@@ -288,11 +288,13 @@ for (const library of libraries) {
 
       await mark(surface, 'unknown');
       assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown');
+      assert.equal(await surface.locator('#reviewMarkNotice, [role="alert"], dialog').count(), 0, '不会后不能弹提示');
 
       await setMode(surface, 'all');
       assert.equal(await surface.locator('#word').textContent(), firstWord);
       await mark(surface, 'known');
       assert.equal(JSON.parse(await surface.evaluate(key => localStorage.getItem(key), library.key))[0], 'unknown', '全部模式不能覆盖不会');
+      assert.equal(await surface.locator('#reviewMarkNotice, [role="alert"], dialog').count(), 0, '会后不能弹提示');
 
       await setMode(surface, 'unknown');
       let locked = await snapshot(surface);
@@ -300,6 +302,7 @@ for (const library of libraries) {
       await mark(surface, 'known');
       locked = await snapshot(surface);
       assert.equal(locked.currentState[0], 'known');
+      assert.equal(await surface.locator('#reviewMarkNotice, [role="alert"], dialog').count(), 0, '只刷不会解除重点也不能弹提示');
       assert.equal(locked.currentWord, firstWord, '本轮锁定名单应继续循环已点会的词');
       assert.deepEqual(locked.order, [0]);
 

@@ -109,7 +109,7 @@ test('normal reset remains immediate; inline hints are unchanged', () => {
   ]) {
     const html = fs.readFileSync(path.join(root, source), 'utf8');
     assert.ok(html.includes("localStorage.removeItem(key())"), source + ' should reset in one click');
-    assert.ok(!/\\b(?:alert|confirm|prompt)\\s*\\(/.test(html), source + ' must not show a native dialog');
+    assert.ok(!/\b(?:alert|confirm|prompt)\s*\(/.test(html), source + ' must not show a native dialog');
     assert.ok(!html.includes('reviewMarkNotice'), source + ' must not show review toast');
   }
   const shared = fs.readFileSync(path.join(root, 'shared/study-progress.js'), 'utf8');

@@ -237,12 +237,11 @@ body {
 </head>
 <body>
 <main class="shell">
-  <div class="topline"><a class="back" href="../index.html"><span class="arrow">‹</span> 返回我的词库</a><span class="pill">✦ 我的单词花园</span></div>
   <p class="eyebrow">CET–6 · LITTLE VOCAB GARDEN</p>
   <h1>给喜欢的词，一颗星星。</h1>
   <p class="subtitle">把值得反复见面的词，悄悄收进自己的小花园。🌷</p>
   <section class="panel" aria-label="我的收藏">
-    <div class="panel-top"><div><h2 class="section-name">⭐ 我的收藏</h2><p class="section-note">高频 → 中频 → 手写 → 阅读，按单元顺序</p></div><span class="badge" id="count">★ 0 词</span></div>
+    <div class="panel-top"><div><p class="section-note">高频 → 中频 → 手写 → 阅读，按单元顺序</p></div><span class="badge" id="count">★ 0 词</span></div>
     <div class="message" id="error" hidden>词库加载失败，请检查网络后重试。<button id="retry" type="button">重试</button></div>
     <div class="tools"><button class="tool" type="button" id="shuffle">⇄ 打乱顺序</button><button class="tool" type="button" id="reset">重置收藏复习</button></div>
     <div class="filters" aria-label="复习模式">
@@ -253,9 +252,8 @@ body {
     <div class="track"><div class="bar" id="bar"></div></div>
     <div class="statistics"><span id="position">0 / 0 · 已刷 0/0</span><span id="stats"><strong>会 0</strong> · <strong>重点 0</strong></span></div>
     <div class="card" id="card" tabindex="0" role="button" aria-label="点击听单词读音">
-      <span class="source" id="source">我的收藏</span><button class="star" id="star" type="button" aria-label="取消收藏" aria-pressed="false" hidden>☆</button>
+      <span class="source" id="source"></span><button class="star" id="star" type="button" aria-label="取消收藏" aria-pressed="false" hidden>☆</button>
       <span class="word" id="word">正在准备词库…</span><span class="ipa" id="ipa" hidden></span><span class="meaning" id="meaning" hidden></span>
-      <span class="hint" id="hint">轻点卡片空白处 · 听读音</span>
     </div>
     <div class="actions">
       <button class="action no" id="no" type="button" disabled>不会，看意思</button>
@@ -341,7 +339,7 @@ body {
       resetQueue(true);
     }catch(error){
       console.error(error);$('error').hidden=false;
-      $('word').textContent='词库暂时未加载';$('hint').textContent='请点击上方「重试」';
+      $('word').textContent='词库暂时未加载';
     }
   }
   function current(){return list[position]||null;}
@@ -377,15 +375,13 @@ body {
     $('meaning').hidden=true;$('ipa').hidden=true;
     const item=current();
     if(!item){
-      $('source').textContent='我的收藏';$('star').hidden=true;
+      $('source').textContent='';$('star').hidden=true;
       $('word').textContent=!catalog.some(isStarred)?'收藏夹还是空的 ✿':selectedMode==='unknown'?'暂时没有重点词':selectedMode==='unseen'?'未刷词已复习完啦':'暂时没有单词';
-      $('hint').textContent='去其他词库点一下 ☆，喜欢的词就会来到这里';
       $('no').disabled=true;$('yes').disabled=true;return;
     }
     $('no').disabled=false;$('yes').disabled=false;$('star').hidden=false;
     $('source').textContent=item.library+' · '+item.unit;
     $('word').textContent=item.word;$('ipa').textContent=item.ipa;$('meaning').textContent=item.meaning;
-    $('hint').textContent='轻点卡片空白处 · 听读音';
     refreshStar();
     saveResume();
   }
@@ -403,7 +399,7 @@ body {
   function revealMeaning(){
     if(!current())return;revealed=true;$('ipa').hidden=false;$('meaning').hidden=false;
     $('no').textContent='加入重点，下一个';$('yes').textContent='记住了，下一个';
-    $('hint').textContent='再点一次下方按钮，进入下一词';speak();
+    speak();
   }
   function mark(value){
     const old=current();if(!old)return;
@@ -445,9 +441,9 @@ body {
   $('yes').onclick=()=>mark('known');$('no').onclick=()=>mark('unknown');$('prev').onclick=previous;
   $('shuffle').onclick=()=>{if(loaded){resetQueue(false,true);flash('已经打乱当前顺序');}};
   $('reset').onclick=()=>{
-    if(!loaded||!confirm('只重置收藏夹的「会 / 不会」记录？收藏星星和原词库进度都会保留。'))return;
+    if(!loaded)return;
     marks={};saveMarks();selectedMode='all';document.querySelectorAll('.filter').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode==='all')));
-    resetQueue();flash('收藏夹的复习记录已重置');
+    resetQueue();
   };
   document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{
     selectedMode=b.dataset.mode;

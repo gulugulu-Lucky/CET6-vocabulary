@@ -161,6 +161,47 @@
       .shelf a { transition: none; }
       .shelf a:hover { transform: none; }
     }
+
+    /* Soft pastel palette belongs to the library HOME, not the study cards. */
+    :root { --page:#fcfaff; --line:#e9e7f1; }
+    html { background:#fcfaff; }
+    body {
+      background:
+        radial-gradient(ellipse 70% 50% at 0% 0%, rgba(255,225,239,.88) 0%, rgba(255,238,247,.40) 54%, transparent 100%),
+        radial-gradient(ellipse 72% 57% at 100% 3%, rgba(224,225,255,.95) 0%, rgba(240,235,255,.52) 57%, transparent 100%),
+        linear-gradient(170deg,#fffafd 0%,#faf9ff 56%,#fffdfb 100%);
+      background-attachment:fixed;
+    }
+    .eyebrow { color:#9389ac; }
+    .intro { color:#89899f; }
+    .section-heading span { color:#a19cb0; }
+    .shelf a {
+      background:rgba(255,255,255,.94);
+      border-color:#e8e6ef;
+      box-shadow:0 7px 27px rgba(79,72,117,.045),0 1px 3px rgba(79,72,117,.025);
+    }
+    .shelf a:hover {
+      border-color:#d9d1ed;
+      box-shadow:0 10px 28px rgba(86,74,137,.09);
+    }
+    .shelf a[href*="favorites.html"] {
+      border-color:#e9e0f0;
+      background:linear-gradient(115deg,rgba(255,255,255,.98),rgba(255,251,245,.94));
+    }
+    .icon.gold {
+      background:linear-gradient(135deg,#fff6dd 0%,#fff0cf 100%);
+      color:#d7a54b;
+    }
+    @media (max-width:650px) {
+      body {
+        background:
+          radial-gradient(ellipse 95% 42% at 0% 0%,rgba(255,228,240,.94),transparent 100%),
+          radial-gradient(ellipse 100% 47% at 100% 4%,rgba(231,229,255,.95),transparent 100%),
+          linear-gradient(170deg,#fffafd,#fbf9ff 65%,#fffdfb);
+        background-attachment:fixed;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -197,7 +238,7 @@
           <span class="info"><strong>阅读重点词</strong><small>28 词 · 快速回顾</small></span>
           <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
         </a>
-        <a href="source-pages/favorites.html?v=20261107-v1">
+        <a href="source-pages/favorites.html?v=20261107-softtheme-v2">
           <span class="icon gold" aria-hidden="true">★</span>
           <span class="info"><strong>我的收藏</strong><small id="favoriteCount">⭐ 0 词 · 专属复习</small></span>
           <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>

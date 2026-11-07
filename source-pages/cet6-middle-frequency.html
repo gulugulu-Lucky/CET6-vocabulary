@@ -462,8 +462,7 @@ $('yesBtn').onclick = yesReview;
 $('noBtn').onclick = noReview;
 $('prevBtn').onclick = goPrev;
 document.querySelectorAll('.inline-sound-btn').forEach(btn => { btn.onclick = e => { e.stopPropagation(); speakWord(); }; });
-// Tapping the blank area of the vocabulary card plays the word aloud without revealing its meaning.
-$('card').onclick = speakWord;
+$('card').onclick = showMeaning;
 
 document.querySelectorAll('.chip').forEach(btn => {
   btn.onclick = () => {

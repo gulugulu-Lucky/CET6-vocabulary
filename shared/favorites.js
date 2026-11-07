@@ -97,5 +97,6 @@
   window.addEventListener('storage', event => {
     if (event.key === STORAGE_KEY) refresh();
   });
+  window.addEventListener('pageshow', refresh);
   refresh();
 })();

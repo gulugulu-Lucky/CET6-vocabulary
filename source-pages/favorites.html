@@ -88,6 +88,151 @@ h1{font-family:"Songti SC","STSong","Noto Serif CJK SC",serif;font-size:clamp(29
 }
 @media(max-width:720px) and (max-height:630px){.eyebrow,.subtitle,.note{display:none}.shell{min-height:0}.panel{padding:9px}.topline{margin-bottom:6px}.actions{flex-basis:58px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
+
+/* Align the INSIDE of the favorites library with the existing high/middle
+   study-card pages. The pink/lilac/cream garden theme is used on index.html. */
+:root {
+  --ink:#253047;
+  --muted:#6d7890;
+}
+body {
+  background:
+    radial-gradient(circle at top left,#fff7fb,transparent 42%),
+    linear-gradient(135deg,#fff,#eef5ff);
+  color:#253047;
+}
+.shell {width:min(920px,100%);max-width:920px;padding:10px 16px 28px}
+.topline {height:34px;min-height:34px;margin:0 1px 8px}
+.back {font-size:13px;color:#69758f;font-weight:650}
+.pill,.eyebrow,h1,.subtitle {display:none}
+.panel {
+  background:rgba(255,255,255,.80);
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:26px;
+  padding:16px;
+  box-shadow:0 18px 55px rgba(80,79,140,.16);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.panel-top {margin-bottom:12px}
+.section-name {font-size:18px;color:#253047}
+.section-note {font-size:12px;color:#8b95a7}
+.badge {background:#fff6e4;color:#b38b50}
+.tools {gap:10px;margin-bottom:10px}
+.tool {
+  border:1px solid #edf0fa;
+  background:#f7f8ff;
+  border-radius:16px;
+  padding:10px 13px;
+  color:#4d5b79;
+  font-weight:650;
+}
+.filters {margin-bottom:11px;gap:8px}
+.filter {background:#fff;color:#647087;border-color:#edf0fa;box-shadow:inset 0 0 0 1px #edf0fa}
+.filter[aria-pressed=true] {background:#253047;color:#fff;border-color:#253047;box-shadow:none}
+.track {background:#eef1fb;height:6px}
+.bar {background:linear-gradient(90deg,#7c8cff,#ff75a0)}
+.statistics {color:#6d7890}
+.statistics strong {color:#58627e}
+.card {
+  border:0;
+  min-height:380px;
+  border-radius:28px;
+  background:#fff;
+  padding:34px 18px;
+  margin-top:8px;
+  gap:15px;
+}
+.card:before {
+  width:180px;height:180px;border-radius:50%;
+  top:-72px;right:-72px;
+  background:#fff0f6;
+}
+.card:after {display:none}
+.source {top:18px;left:20px;color:#6d7890;font-size:13px}
+.star {
+  top:10px;right:12px;
+  background:rgba(255,249,235,.72);
+  color:#b8b7c3;
+}
+.word {
+  font-size:48px;font-weight:800;
+  letter-spacing:.4px;line-height:1.08;
+}
+.ipa {font-size:20px;color:#6d7890}
+.meaning {font-size:23px;line-height:1.45;color:#34415f;max-height:44%}
+.actions {grid-template-columns:minmax(0,1fr) 98px minmax(0,1fr);gap:10px;margin-top:12px}
+.action {
+  min-height:70px;
+  border:0;
+  border-radius:14px;
+  font-size:14px;
+  font-weight:650;
+}
+.no {background:#fff0f2;color:#e35d6a}
+.yes {background:#ebfff5;color:#26a269}
+.prev {
+  border:1px solid #e1dafb;
+  border-radius:14px;
+  background:linear-gradient(155deg,#fdfaff,#eeeaff);
+  color:#5d568c;
+  box-shadow:0 4px 12px rgba(104,88,160,.08),inset 0 1px 0 rgba(255,255,255,.95);
+}
+@media(max-width:720px) {
+  .shell {
+    width:100%;
+    height:100vh;height:100svh;height:100dvh;
+    min-height:0;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+  }
+  .topline {flex:0 0 27px;height:27px;min-height:27px;margin:0 4px 6px}
+  .panel {
+    flex:1;min-width:0;min-height:0;
+    padding:12px;
+    border-radius:20px;
+  }
+  .panel-top {flex:0 0 auto;margin-bottom:8px}
+  .section-name {font-size:16px}
+  .section-note {font-size:11px}
+  .badge {font-size:10px;padding:7px 9px}
+  .tools {flex:0 0 auto;margin-bottom:9px;gap:7px}
+  .tool {height:42px;min-width:0;padding:8px 10px;font-size:12px}
+  .filters {flex:0 0 auto;gap:6px;margin-bottom:9px}
+  .filter {height:37px;padding:7px 11px;font-size:12px}
+  .track {flex:0 0 6px;height:6px}
+  .statistics {flex:0 0 auto;margin:7px 2px 5px;font-size:11px}
+  .card {
+    flex:1;min-width:0;min-height:0;
+    margin-top:8px;
+    padding:32px 12px 16px;
+    border-radius:20px;
+    gap:10px;
+  }
+  .card:before {width:128px;height:128px;top:-54px;right:-54px}
+  .source {top:12px;left:14px;font-size:12px}
+  .star {top:6px;right:7px;width:44px;height:44px;font-size:30px}
+  .word {font-size:clamp(29px,9vw,42px)}
+  .ipa {font-size:16px;min-height:0}
+  .meaning {font-size:clamp(15px,4.3vw,18px);line-height:1.4;max-height:42%;overflow-y:auto}
+  .hint {font-size:10px;bottom:12px}
+  .actions {
+    flex:0 0 78px;height:78px;
+    grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);
+    gap:7px;margin-top:9px;
+  }
+  .action {min-height:0;font-size:13px;padding:7px 5px;border-radius:14px}
+  .footnote,.note {display:none}
+}
+@media(max-width:720px) and (max-height:610px) {
+  .topline {flex-basis:20px;height:20px;min-height:20px}
+  .panel-top {margin-bottom:5px}
+  .section-note {display:none}
+  .tools {margin-bottom:6px}
+  .filters {margin-bottom:6px}
+  .actions {flex-basis:65px;height:65px}
+}
+
 </style>
 </head>
 <body>

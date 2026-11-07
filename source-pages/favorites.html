@@ -310,6 +310,11 @@ h1{font-family:"Songti SC","STSong","Noto Serif CJK SC",serif;font-size:clamp(29
     if(loaded)resetQueue();
   });
   $('retry').onclick=loadAll;
+  // Safari may restore this page from its back/forward cache. Re-read favorites
+  // when coming back from another word library, keeping the original sort.
+  window.addEventListener('pageshow',()=>{
+    if(loaded) resetQueue(true);
+  });
   window.addEventListener('storage',event=>{
     if(event.key===favorites.STORAGE_KEY&&loaded){resetQueue(true);}
     if(event.key===MARK_KEY){marks=readMarks();if(loaded)resetQueue(true);}

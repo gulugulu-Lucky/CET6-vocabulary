@@ -12,7 +12,7 @@
     } catch (_) { return {}; }
   }
   function has(word) { return Boolean(read()[normalize(word)]); }
-  function count() { return Object.keys(read()).filter(key => Boolean(read()[key])).length; }
+  function count() { const favorites=read(); return Object.keys(favorites).filter(key => Boolean(favorites[key])).length; }
   function toggle(word) {
     const key = normalize(word);
     if (!key) return false;

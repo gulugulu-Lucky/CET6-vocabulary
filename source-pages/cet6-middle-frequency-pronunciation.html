@@ -200,6 +200,31 @@ button:disabled { opacity:.45; cursor:not-allowed; }
   .app { height: auto; min-height: 100dvh; }
   .card { min-height: 190px; }
 }
+
+/* Pronunciation-only variant: one centered previous button, with a soft lilac treatment. */
+.actions .middle-stack {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+.actions .nav-btn {
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  padding: 8px 6px;
+  color: #5d568c;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .025em;
+  background: linear-gradient(155deg, #fdfaff 0%, #eeeaff 100%);
+  border: 1px solid #e1dafb;
+  box-shadow: 0 4px 12px rgba(104, 88, 160, .08), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.actions .nav-btn:focus-visible { outline: 2px solid #8c7be9; outline-offset: 2px; }
+.actions .nav-btn:disabled { opacity: .45; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -229,7 +254,6 @@ button:disabled { opacity:.45; cursor:not-allowed; }
       <button class="bad" id="noBtn">不会，看意思</button>
       <div class="middle-stack">
         <button class="nav-btn" id="prevBtn" title="返回上一个">上一个</button>
-        <button class="inline-sound-btn" id="inlineSoundBtn" title="播放读音" aria-label="播放读音">🔊</button>
       </div>
       <button class="good" id="yesBtn">会，显示意思</button>
     </div>
@@ -461,7 +485,6 @@ $('resetBtn').onclick = () => {
 $('yesBtn').onclick = yesReview;
 $('noBtn').onclick = noReview;
 $('prevBtn').onclick = goPrev;
-document.querySelectorAll('.inline-sound-btn').forEach(btn => { btn.onclick = e => { e.stopPropagation(); speakWord(); }; });
 // Independent pronunciation-card version: tap the card to reveal IPA and hear the word, without showing its meaning.
 function revealPronunciation() {
   if (!order.length) return;

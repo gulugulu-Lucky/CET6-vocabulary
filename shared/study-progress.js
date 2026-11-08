@@ -29,6 +29,10 @@
     Object.freeze({
       id: 'reading', name: '阅读重点词', icon: '🌷', type: 'flat',
       key: 'reading_vocab_28_v1', total: 28
+    }),
+    Object.freeze({
+      id: 'reading_intervention', name: '阅读精读', icon: '📖', type: 'flat',
+      key: 'cet6_reading_intervention_17_v1', total: 17
     })
   ]);
 

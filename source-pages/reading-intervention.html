@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>阅读精读｜职场安全 · 17词</title>
+<style>
+:root{--bg1:#fff7fb;--bg2:#eef5ff;--card:#ffffffcc;--text:#253047;--muted:#6d7890;--accent:#ff75a0;--accent2:#7c8cff;--good:#26a269;--bad:#e35d6a;--shadow:0 18px 55px rgba(80,79,140,.18)}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--text);background:radial-gradient(circle at top left,var(--bg1),transparent 42%),linear-gradient(135deg,#fff,var(--bg2))}.app{width:min(920px,100%);margin:0 auto;padding:10px 16px 28px}.panel{background:var(--card);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.7);border-radius:26px;padding:16px;box-shadow:var(--shadow)}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}button{font:inherit;border:0;border-radius:16px;padding:12px 14px;background:#fff;color:var(--text);box-shadow:inset 0 0 0 1px #edf0fa;cursor:pointer;transition:none;font-weight:650}button:active{transform:none}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#f7f8ff}.card{min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:15px;background:#fff;border-radius:28px;padding:34px 18px;margin-top:8px;position:relative;overflow:hidden}.card:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#fff0f6;top:-72px;right:-72px}.unit-tag{position:absolute;top:18px;left:20px;color:var(--muted);font-size:13px}.word{font-size:48px;font-weight:800;letter-spacing:.4px;line-height:1.08;word-break:break-word;z-index:1}.meaning{z-index:1;min-height:60px;font-size:23px;line-height:1.45;color:#34415f;padding:0 14px;display:none;white-space:pre-line}.meaning.show{display:block}.ipa{z-index:1;min-height:30px;font-size:20px;color:var(--muted);letter-spacing:.3px;display:none}.ipa.show{display:block}.sound-pocket{z-index:1;display:none}.sound-pocket.show{display:block}.inline-sound-btn{width:76px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#f7f8ff;color:#253047;box-shadow:inset 0 0 0 1px #e7ebf7;padding:0}.actions{display:grid;grid-template-columns:1fr 96px 1fr;gap:10px;margin-top:12px}.good{background:#ebfff5;color:var(--good)}.bad{background:#fff0f2;color:var(--bad)}.nav-btn{height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#f7f8ff;color:#4d5b79;box-shadow:inset 0 0 0 1px #e7ebf7;padding:0 10px}.progress-wrap{height:10px;background:#eef1fb;border-radius:999px;overflow:hidden;margin:14px 2px 8px}.progress{height:100%;width:0%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:999px;transition:.2s width}.stats{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:13px;flex-wrap:wrap}.modebar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}.chip{padding:9px 11px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px #edf0fa;font-size:13px}.chip.active{background:#253047;color:white}html,body,button,select,.card{-webkit-tap-highlight-color:transparent;touch-action:manipulation}select,input{font-size:16px}button,.card,.word,.meaning,.ipa{user-select:none;-webkit-user-select:none}@media(max-width:720px){.controls{grid-template-columns:1fr}.word{font-size:40px}.meaning{font-size:20px}.ipa{font-size:18px}.card{min-height:385px}}
+
+.actions { display:grid !important; grid-template-columns:1fr 98px 1fr !important; gap:10px !important; margin-top:12px !important; align-items:stretch !important; }
+.middle-stack { display:grid; grid-template-rows:1fr 1fr; gap:8px; }
+.nav-btn { height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:16px; background:#f7f8ff; color:#4d5b79; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0 10px; }
+.inline-sound-btn { width:100%; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; background:#f7f8ff; color:#253047; box-shadow:inset 0 0 0 1px #e7ebf7; padding:0; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.sound-pocket { display:none !important; }
+.hint-toggle,
+.hint-note {
+  position:absolute;
+  z-index:4;
+}
+.hint-toggle {
+  right:auto;
+  bottom:auto;
+  padding:2px 4px;
+  border-radius:6px;
+  color:rgba(117,98,78,.48);
+  background:transparent;
+  box-shadow:none;
+  font-size:11px;
+  font-weight:500;
+  line-height:1.25;
+  white-space:nowrap;
+  opacity:.58;
+  filter:grayscale(.45);
+}
+.hint-toggle:hover,
+.hint-toggle:focus-visible {
+  color:rgba(117,98,78,.62);
+  background:transparent;
+  opacity:.75;
+}
+.hint-toggle:focus-visible {
+  outline:1px solid rgba(166,133,82,.32);
+  outline-offset:2px;
+}
+.hint-note {
+  right:18px;
+  bottom:16px;
+  width:min(310px,calc(100% - 36px));
+  padding:10px 13px 11px;
+  border-radius:16px;
+  color:#5d5143;
+  background:rgba(255,251,235,.96);
+  box-shadow:inset 0 0 0 1px rgba(214,184,120,.25),0 10px 28px rgba(93,77,50,.12);
+  text-align:left;
+  line-height:1.45;
+}
+.hint-toggle[hidden],
+.hint-note[hidden] { display:none; }
+.ipa:not(.show) ~ .hint-toggle { display:none; }
+.hint-note-title { display:block; margin-bottom:2px; color:#8a6f48; font-size:12px; font-weight:750; }
+.hint-note-text { display:block; font-size:14px; font-weight:500; }
+.hint-sense { display:block; }
+.hint-sense + .hint-sense { margin-top:2px; }
+@media (max-width:720px) { .actions { grid-template-columns:1fr 92px 1fr !important; } }
+@media (max-width:480px) {
+  .hint-note { right:14px; bottom:10px; }
+  .hint-note { width:calc(100% - 28px); padding:8px 12px 9px; }
+  .hint-note-text { font-size:13px; }
+}
+
+
+
+/* One-screen mobile review layout, matching high/middle frequency pages. */
+@media (max-width: 720px) {
+  body { min-height: 100dvh; overflow-x: hidden; }
+  .app {
+    width: 100%;
+    height: 100vh; /* fallback for browsers without dynamic viewport units */
+    height: 100svh;
+    height: 100dvh;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    display: flex;
+  }
+  .panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .controls {
+    flex: 0 0 auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 0;
+  }
+  .controls select {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 42px;
+    min-width: 0;
+    padding: 8px 12px;
+    font-size: 16px;
+  }
+  .controls button {
+    height: 42px;
+    min-width: 0;
+    padding: 8px 5px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .modebar {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin: 9px 0 0;
+  }
+  .modebar .chip {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 38px;
+    padding: 7px 2px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .progress-wrap {
+    flex: 0 0 6px;
+    height: 6px;
+    margin: 9px 1px 7px;
+  }
+  .stats {
+    flex: 0 0 auto;
+    gap: 3px;
+    line-height: 1.4;
+    font-size: 12px;
+  }
+  .card {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    margin-top: 8px;
+    padding: 32px 12px 16px;
+    border-radius: 20px;
+    gap: 10px;
+  }
+  .card:before { width: 128px; height: 128px; top: -54px; right: -54px; }
+  .unit-tag { top: 12px; left: 14px; font-size: 12px; }
+  .word { flex: 0 0 auto; font-size: clamp(29px, 9vw, 42px); }
+  .meaning {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: calc(100% - 90px);
+    overflow-y: auto;
+    padding: 0 5px;
+    font-size: clamp(15px, 4.3vw, 18px);
+    line-height: 1.4;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ipa { flex: 0 0 auto; min-height: 0; font-size: 16px; }
+  .actions {
+    flex: 0 0 78px;
+    height: 78px;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    margin-top: 9px !important;
+  }
+  .actions > button {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 5px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .middle-stack { min-width: 0; min-height: 0; gap: 6px; }
+  .nav-btn {
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    padding: 3px;
+    border-radius: 11px;
+    font-size: 13px;
+  }
+  .inline-sound-btn {
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    padding: 2px;
+    border-radius: 11px;
+    font-size: 20px;
+  }
+}
+@media (max-width: 720px) and (max-height: 540px) {
+  /* On very short screens, prefer scrolling to clipping controls. */
+  .app { height: auto; min-height: 100dvh; }
+  .card { min-height: 190px; }
+}
+/* Pronunciation-only variant: one centered previous button, with a soft lilac treatment. */
+.actions .middle-stack {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+.actions .nav-btn {
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  padding: 8px 6px;
+  color: #5d568c;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .025em;
+  background: linear-gradient(155deg, #fdfaff 0%, #eeeaff 100%);
+  border: 1px solid #e1dafb;
+  box-shadow: 0 4px 12px rgba(104, 88, 160, .08), inset 0 1px 0 rgba(255,255,255,.95);
+}
+.actions .nav-btn:focus-visible { outline: 2px solid #8c7be9; outline-offset: 2px; }
+.actions .nav-btn:disabled { opacity: .45; box-shadow: none; }
+</style>
+</head>
+<body>
+<div class="app"><div class="panel">
+<div class="controls"><button class="secondary" id="shuffleBtn">打乱顺序</button><button class="secondary" id="resetBtn">重置记录</button></div>
+<div class="modebar"><button class="chip active" data-mode="all">全部</button><button class="chip" data-mode="unknown">只刷不会</button><button class="chip" data-mode="unseen">只刷未刷</button></div>
+<div class="progress-wrap"><div class="progress" id="progress"></div></div>
+<div class="stats"><span id="posText"></span><span id="knownText"></span><span id="unknownText"></span></div>
+<div class="card" id="card"><div class="unit-tag" id="unitTag">阅读精读</div><div class="word" id="word">Ready?</div><div class="meaning" id="meaning"></div><div class="ipa" id="ipa"></div><button type="button" class="hint-toggle" id="hintToggle" aria-expanded="false" hidden>💡 理解</button><button type="button" class="hint-note" id="hintNote" aria-label="关闭辅助理解" hidden><span class="hint-note-title" id="hintTitle">💡 核心理解</span><span class="hint-note-text" id="hintText"></span></button></div>
+<div class="actions">
+      <button class="bad" id="noBtn">不会，看意思</button>
+      <div class="middle-stack">
+        <button class="nav-btn" id="prevBtn" title="返回上一个">上一个</button>
+      </div>
+      <button class="good" id="yesBtn">会，显示意思</button>
+    </div>
+</div></div>
+<script src="../shared/study-progress.js?v=20261016-prev-word-only-v5"></script>
+<script>
+const DATA=[{"id":1,"unit":"Passage 1","word":"irrefutable","ipa":"/ˌɪrɪˈfjuːtəbl/","meaning":"adj. 无可辩驳的；无法否认的"},{"id":2,"unit":"Passage 1","word":"unfold","ipa":"/ʌnˈfoʊld/","meaning":"v. 展开；逐渐显露；发生"},{"id":3,"unit":"Passage 1","word":"idly","ipa":"/ˈaɪdli/","meaning":"adv. 无所事事地；懒散地"},{"id":4,"unit":"Passage 1","word":"mentality","ipa":"/menˈtæləti/","meaning":"n. 心态；思维方式"},{"id":5,"unit":"Passage 1","word":"instance","ipa":"/ˈɪnstəns/","meaning":"n. 例子；实例；情况"},{"id":6,"unit":"Passage 1","word":"supervisor","ipa":"/ˈsuːpərvaɪzər/","meaning":"n. 主管；监督者"},{"id":7,"unit":"Passage 1","word":"defer","ipa":"/dɪˈfɜːr/","meaning":"v. 推迟；延期；听从；遵从"},{"id":8,"unit":"Passage 1","word":"hazard","ipa":"/ˈhæzərd/","meaning":"n. 危险；隐患\nv. 冒险提出；使冒风险"},{"id":9,"unit":"Passage 1","word":"oblige","ipa":"/əˈblaɪdʒ/","meaning":"v. 迫使；使负有义务；帮忙"},{"id":10,"unit":"Passage 1","word":"designate","ipa":"/ˈdezɪɡneɪt/","meaning":"v. 指定；指派；标明"},{"id":11,"unit":"Passage 1","word":"competent","ipa":"/ˈkɑːmpɪtənt/","meaning":"adj. 有能力的；胜任的；称职的"},{"id":12,"unit":"Passage 1","word":"slack","ipa":"/slæk/","meaning":"adj. 松弛的；松懈的\nn. 松弛；懈怠\nv. 松弛；懈怠"},{"id":13,"unit":"Passage 1","word":"unfavorable","ipa":"/ʌnˈfeɪvərəbl/","meaning":"adj. 不利的；不赞成的；不适宜的"},{"id":14,"unit":"Passage 1","word":"block","ipa":"/blɑːk/","meaning":"v. 阻碍；阻塞；阻挡\nn. 大块；街区；障碍物"},{"id":15,"unit":"Passage 1","word":"diffusion of responsibility","ipa":"/dɪˈfjuːʒən əv rɪˌspɑːnsəˈbɪləti/","meaning":"n. 责任分散"},{"id":16,"unit":"Passage 1","word":"intervene","ipa":"/ˌɪntərˈviːn/","meaning":"v. 干预；介入；干涉"},{"id":17,"unit":"Passage 1","word":"execute","ipa":"/ˈeksɪkjuːt/","meaning":"v. 执行；实施；处决"}];
+let order=[],idx=0,mode='all',shown=false,historyStack=[];const $=id=>document.getElementById(id);const key=()=> 'cet6_reading_intervention_17_v1';const state=()=>JSON.parse(localStorage.getItem(key())||'{}');const save=s=>localStorage.setItem(key(),JSON.stringify(s));function currentItem(){return order.length?DATA[order[idx]]:null}function filteredIndexes(){const s=state();return DATA.map((_,i)=>i).filter(i=>{if(mode==='unknown')return s[i]==='unknown';if(mode==='unseen')return !s[i];return true})}function shuffleArray(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}function resetButtons(){$('yesBtn').textContent='会，显示意思';$('noBtn').textContent='不会，看意思'}function afterShowButtons(){$('yesBtn').textContent='记住了，过';$('noBtn').textContent='加入重点，下一个'}function updatePrevBtn(){$('prevBtn').disabled=historyStack.length===0}function rebuildOrder(shuffle=false){order=filteredIndexes();if(shuffle)shuffleArray(order);idx=0;render()}function updateStats(){const s=state();const known=Object.values(s).filter(v=>v==='known').length;const unknown=Object.values(s).filter(v=>v==='unknown').length;const done=known+unknown;$('progress').style.width=DATA.length?(done/DATA.length*100)+'%':'0%';$('knownText').textContent='会：'+known;$('unknownText').textContent='重点：'+unknown;$('posText').textContent=order.length?((idx+1)+' / '+order.length+' 当前｜'+done+' / '+DATA.length+' 已刷'):(done+' / '+DATA.length+' 已刷')}function render(){updateStats();if(!order.length){$('unitTag').textContent='阅读精读';$('word').textContent=mode==='unknown'?'暂时没有“不会”词':mode==='unseen'?'未刷词清空啦':'没有词条';$('meaning').textContent='换个模式或重置记录就可以继续刷。';$('meaning').classList.add('show');$('ipa').textContent='';$('ipa').classList.remove('show');resetButtons();updatePrevBtn();return}if(idx>=order.length)idx=0;const item=currentItem();shown=false;$('unitTag').textContent=item.unit+' · 阅读精读';$('word').textContent=item.word;$('meaning').textContent=item.meaning;$('ipa').textContent=item.ipa;$('meaning').classList.remove('show');$('ipa').classList.remove('show');updateStats();resetButtons();updatePrevBtn()}function showMeaning(){if(!order.length)return;shown=true;$('meaning').classList.add('show');$('ipa').classList.add('show');afterShowButtons()}function speakWord(){const item=currentItem();if(!item||!('speechSynthesis' in window))return;window.speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(item.word);utter.lang='en-US';utter.rate=.82;utter.pitch=1;window.speechSynthesis.speak(utter)}function mark(v){if(!order.length)return;const dataIndex=order[idx];const s=state();historyStack.push({dataIndex,prevMark:s[dataIndex]??null,revealed:shown});s[dataIndex]=v;save(s);idx++;render()}function goPrev(){if(!historyStack.length)return;const last=historyStack.pop();const previousIndex=order.indexOf(last.dataIndex);if(previousIndex<0){updatePrevBtn();return}idx=previousIndex;render();updatePrevBtn()}function yesReview(){if(!order.length)return;if(!shown){showMeaning();speakWord()}else mark('known')}function noReview(){if(!order.length)return;if(!shown){showMeaning();speakWord()}else mark('unknown')}function next(){idx++;render()}$('shuffleBtn').onclick=()=>rebuildOrder(true);$('resetBtn').onclick=()=>{localStorage.removeItem(key());historyStack=[];rebuildOrder(false)};$('yesBtn').onclick=yesReview;$('noBtn').onclick=noReview;$('prevBtn').onclick=goPrev;$('card').onclick=revealPronunciation;document.querySelectorAll('.chip').forEach(btn=>{btn.onclick=()=>{document.querySelectorAll('.chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');mode=btn.dataset.mode;historyStack=[];rebuildOrder(false)}});document.addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();shown?next():(showMeaning(),speakWord())}if(e.key==='ArrowRight')yesReview();if(e.key==='ArrowLeft')noReview();if(e.key==='ArrowDown')next();if(e.key==='ArrowUp')goPrev();if(e.key.toLowerCase()==='p')speakWord()});rebuildOrder(false);
+</script>
+<script>
+const RESUME_KEY = 'cet6_reading_intervention_resume_v1';
+function readResumePosition() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RESUME_KEY) || 'null');
+    const validIndex = saved && Number.isInteger(saved.dataIndex) && saved.dataIndex >= 0 && saved.dataIndex < DATA.length;
+    return validIndex ? saved.dataIndex : null;
+  } catch {
+    return null;
+  }
+}
+function saveResumePosition(dataIndex) {
+  try {
+    localStorage.setItem(RESUME_KEY, JSON.stringify({ dataIndex }));
+  } catch {}
+}
+const renderWithoutResume = render;
+render = function() {
+  renderWithoutResume();
+  if (!order.length) return;
+  const dataIndex = order[idx];
+  if (currentItem()) saveResumePosition(dataIndex);
+};
+const savedDataIndex = readResumePosition();
+order = filteredIndexes();
+const savedOrderIndex = order.indexOf(savedDataIndex);
+idx = savedOrderIndex >= 0 ? savedOrderIndex : 0;
+render();
+</script>
+<script>
+let unknownSnapshot = null;
+
+filteredIndexes = function() {
+  const s = state();
+  if (mode === 'unknown') {
+    if (!Array.isArray(unknownSnapshot)) unknownSnapshot = StudyProgress.createUnknownSnapshot(DATA.length, s);
+    return unknownSnapshot.slice();
+  }
+  return DATA.map((_, index) => index).filter(index => mode !== 'unseen' || !s[index]);
+};
+
+rebuildOrder = function(shuffle = false) {
+  order = filteredIndexes();
+  if (shuffle) shuffleArray(order);
+  idx = 0;
+  render();
+};
+
+mark = function(value) {
+  if (!order.length) return;
+  const dataIndex = order[idx];
+  const s = state();
+  const outcome = StudyProgress.applyMark(s, dataIndex, value, mode, { libraryId: 'reading_intervention', scope: 'all' });
+  historyStack.push({ dataIndex, prevMark: outcome.previous, revealed: shown });
+  save(s);
+  idx++;
+  render();
+};
+
+goPrev = function() {
+  if (!historyStack.length) return;
+  const last = historyStack.pop();
+  // Returning to a card must never undo its stored known/unknown result.
+  const previousIndex = order.indexOf(last.dataIndex);
+  if (previousIndex < 0) { updatePrevBtn(); return; }
+  idx = previousIndex;
+  render();
+  // Always return to the word-only front, just like a new card.
+  updatePrevBtn();
+};
+
+$('shuffleBtn').onclick = () => rebuildOrder(true);
+$('resetBtn').onclick = () => {
+  localStorage.removeItem(key());
+  historyStack = [];
+  unknownSnapshot = mode === 'unknown' ? [] : null;
+  rebuildOrder(false);
+};
+$('prevBtn').onclick = goPrev;
+document.querySelectorAll('.chip').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.chip').forEach(item => item.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    historyStack = [];
+    unknownSnapshot = mode === 'unknown' ? StudyProgress.createUnknownSnapshot(DATA.length, state()) : null;
+    rebuildOrder(false);
+  };
+});
+</script>
+<script>
+
+function revealPronunciation(){if(!order.length)return;$('ipa').classList.add('show');speakWord()}
+const HINTS = Object.freeze({});
+DATA.forEach(item => {
+  if (Object.prototype.hasOwnProperty.call(HINTS, item.word)) item.hint = HINTS[item.word];
+});
+
+function closeHint() {
+  $('hintNote').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'false');
+  $('hintNote').style.top = '';
+  $('hintNote').style.bottom = '';
+  $('hintNote').style.left = '';
+  $('hintNote').style.right = '';
+}
+function renderHintContent(hint) {
+  $('hintText').replaceChildren();
+  if (hint.core) {
+    $('hintTitle').textContent = '💡 核心理解';
+    $('hintText').textContent = hint.core;
+    return;
+  }
+  $('hintTitle').textContent = '💡 分义理解';
+  hint.senses.forEach(sense => {
+    const line = document.createElement('span');
+    line.className = 'hint-sense';
+    line.textContent = sense;
+    $('hintText').appendChild(line);
+  });
+}
+function updateHintEntry() {
+  const item = order.length ? currentItem() : null;
+  const hasHint = Boolean(item && item.hint);
+  $('hintToggle').hidden = !hasHint;
+  $('hintNote').hidden = true;
+  if (hasHint) {
+    renderHintContent(item.hint);
+    requestAnimationFrame(positionHintToggle);
+  }
+  else $('hintText').replaceChildren();
+}
+function positionHintToggle() {
+  const toggle = $('hintToggle');
+  const ipa = $('ipa');
+  if (toggle.hidden || getComputedStyle(ipa).display === 'none') return;
+  const cardRect = $('card').getBoundingClientRect();
+  const anchor = ipa.getBoundingClientRect();
+  const toggleRect = toggle.getBoundingClientRect();
+  const edge = innerWidth <= 480 ? 8 : 12;
+  const gap = 4;
+  let left = anchor.right - cardRect.left + gap;
+  let top = anchor.top - cardRect.top + (anchor.height - toggleRect.height) / 2;
+  left = Math.min(left, cardRect.width - edge - toggleRect.width);
+  top = Math.max(52, Math.min(top, cardRect.height - edge - toggleRect.height));
+  toggle.style.left = left + 'px';
+  toggle.style.top = top + 'px';
+}
+function placeHintNote() {
+  const note = $('hintNote');
+  const cardRect = $('card').getBoundingClientRect();
+  const ipaRect = $('ipa').getBoundingClientRect();
+  const actionsRect = document.querySelector('.actions').getBoundingClientRect();
+  const horizontalGap = innerWidth <= 480 ? 14 : 18;
+  const verticalGap = 8;
+  const cardBottomGap = innerWidth <= 480 ? 10 : 16;
+
+  note.style.left = 'auto';
+  note.style.right = 'auto';
+  note.style.top = 'auto';
+  note.style.bottom = 'auto';
+  note.style.maxWidth = 'none';
+  note.style.maxHeight = 'none';
+  note.style.overflowY = 'visible';
+  note.scrollTop = 0;
+
+  const naturalRect = note.getBoundingClientRect();
+  const safeLeft = cardRect.left + horizontalGap;
+  const safeRight = cardRect.right - horizontalGap;
+  const safeTop = ipaRect.bottom + verticalGap;
+  const safeBottom = Math.min(cardRect.bottom - cardBottomGap, actionsRect.top - verticalGap);
+  const availableWidth = Math.max(0, safeRight - safeLeft);
+  const availableHeight = Math.max(0, safeBottom - safeTop);
+
+  note.style.maxWidth = availableWidth + 'px';
+  const noteWidth = Math.min(note.getBoundingClientRect().width, availableWidth);
+  const centeredLeft = cardRect.left + (cardRect.width - noteWidth) / 2;
+  const clampedLeft = Math.max(safeLeft, Math.min(centeredLeft, safeRight - noteWidth));
+
+  note.style.left = clampedLeft - cardRect.left + 'px';
+  note.style.top = safeTop - cardRect.top + 'px';
+  note.style.maxHeight = availableHeight + 'px';
+  note.style.overflowY = naturalRect.height > availableHeight ? 'auto' : 'visible';
+}
+const renderWithoutHint = render;
+render = function() {
+  closeHint();
+  renderWithoutHint();
+  updateHintEntry();
+};
+$('hintToggle').onclick = event => {
+  event.stopPropagation();
+  $('hintToggle').hidden = true;
+  $('hintToggle').setAttribute('aria-expanded', 'true');
+  $('hintNote').hidden = false;
+  placeHintNote();
+};
+$('hintNote').onclick = event => {
+  event.stopPropagation();
+  closeHint();
+  updateHintEntry();
+};
+function scheduleHintPosition() {
+  requestAnimationFrame(() => {
+    positionHintToggle();
+    if (!$('hintNote').hidden) placeHintNote();
+  });
+}
+const hintPositionObserver = new ResizeObserver(scheduleHintPosition);
+['card', 'word', 'meaning', 'ipa'].forEach(id => hintPositionObserver.observe($(id)));
+window.addEventListener('resize', scheduleHintPosition);
+render();
+</script>
+<script src="../shared/favorites.js?v=20261107-v2"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<script src="shared/cloud-sync.js?v=20261127-4"></script>
+<script src="shared/cloud-sync.js?v=20261127-6"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#faf9f7">
@@ -255,7 +255,7 @@
     <section aria-labelledby="data-heading">
       <div class="section-heading">
         <h2 id="data-heading">学习记录</h2>
-        <span>仅保存在本机</span>
+        <span>本地保存 · 支持云同步</span>
       </div>
       <nav class="shelf data-shelf" aria-label="查看学习数据">
         <a href="study-data.html">
@@ -274,6 +274,7 @@
     }
     updateFavoriteCount();
     window.addEventListener('pageshow', updateFavoriteCount);
+    window.addEventListener('cet6:cloud-synced', updateFavoriteCount);
     window.addEventListener('storage', function(event) {
       if (event.key === 'cet6_favorite_words_v1') updateFavoriteCount();
     });

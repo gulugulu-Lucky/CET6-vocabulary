@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<script src="shared/cloud-sync.js?v=20261127-4"></script>
+<script src="shared/cloud-sync.js?v=20261127-6"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#faf9f7">
@@ -175,6 +175,7 @@
     }
     renderDashboard();
     window.addEventListener('storage', renderDashboard);
+    window.addEventListener('cet6:cloud-synced', renderDashboard);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) renderDashboard(); });
   </script>
 </body>

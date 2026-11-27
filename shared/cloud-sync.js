@@ -11,7 +11,7 @@ const activity='cet6_study_activity_v1', favorite='cet6_favorite_words_v1';
 const resume=k=>k.includes('resume');
 function flatten(k,raw){
  const out={};if(raw===null)return out;
- let v;try{v=JSON.parse(raw)}catch{v=raw}
+ let v;if(k==='cet6_favorite_resume_v1')v=raw;else try{v=JSON.parse(raw)}catch{v=raw}
  if(resume(k)){out['']=v;return out}
  if(k===activity){if(v?.startedAt)out['@started']=v.startedAt;for(const [day,entries] of Object.entries(v?.days||{}))for(const id of Object.keys(entries||{}))out[JSON.stringify([day,id])]=1;return out}
  if(v&&typeof v==='object'&&!Array.isArray(v))Object.assign(out,v);return out;
@@ -43,12 +43,16 @@ function apply(m){const groups={};for(const [id,r] of Object.entries(m)){let k,i
  }}finally{applying=false}}
 async function sync(){if(busy||!read(SESSION,null))return;busy=true;try{show('同步中…');const s=await session();if(!s)return;const uid=s.user.id;let m=snapshot();const remote={};for(let offset=0;;offset+=500){const rows=await api('/rest/v1/study_records?select=record_key,record_data&order=record_key&offset='+offset+'&limit=500',{},s.access_token);for(const r of rows)remote[r.record_key]=r.record_data;if(rows.length<500)break}
  // Re-read local changes made while the request was in flight.
- m=snapshot();const upload=[];
- for(const id of new Set([...Object.keys(m),...Object.keys(remote)])){let l=m[id],r=remote[id];if(!l){m[id]={...r,dirty:false};continue}if(r&&!l.at&&!l.deleted){const [k,i]=JSON.parse(id);if(r.deleted||resume(k)||i==='@started'){m[id]={...r,dirty:false};continue}const v=mergeInitial(k,l.value,r.value);if(JSON.stringify(v)===JSON.stringify(r.value)){m[id]={...r,dirty:false};continue}l={value:v,deleted:false,at:new Date().toISOString(),dirty:true};m[id]=l}
+ m=snapshot();const upload=[]; const expected={};
+ for(const id of new Set([...Object.keys(m),...Object.keys(remote)])){let l=m[id],r=remote[id];if(!l){m[id]={...r,dirty:false};continue}if(r&&!l.at&&!l.deleted){const [k,i]=JSON.parse(id);if(r.deleted||resume(k)){m[id]={...r,dirty:false};continue}const v=mergeInitial(k,l.value,r.value);if(JSON.stringify(v)===JSON.stringify(r.value)){m[id]={...r,dirty:false};continue}l={value:v,deleted:false,at:new Date().toISOString(),dirty:true};m[id]=l}
  if(r&&(!l.dirty||(r.at||'')>(l.at||''))){m[id]={...r,dirty:false};continue}
- if(l.dirty||!r){l.at??=new Date().toISOString();upload.push({user_id:uid,record_key:id,record_data:{value:l.value,deleted:l.deleted,at:l.at},updated_at:l.at})}}
+ if(l.dirty||!r){l.at??=new Date().toISOString();expected[id]=r?.at??null;upload.push({user_id:uid,record_key:id,record_data:{value:l.value,deleted:l.deleted,at:l.at},updated_at:l.at})}}
  save(META,m);apply(m);
- for(let i=0;i<upload.length;i+=100){const batch=upload.slice(i,i+100);await api('/rest/v1/study_records?on_conflict=user_id,record_key',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(batch)},s.access_token);const latest=read(META,{});for(const row of batch){const l=latest[row.record_key];if(l&&l.at===row.record_data.at&&JSON.stringify(l.value)===JSON.stringify(row.record_data.value))l.dirty=false}save(META,latest)}
+ const inserted=upload.filter(row=>!remote[row.record_key]);const updated=upload.filter(row=>remote[row.record_key]);const ack=[];
+ for(let i=0;i<inserted.length;i+=100){const batch=inserted.slice(i,i+100);const rows=await api('/rest/v1/study_records?on_conflict=user_id,record_key',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation'},body:JSON.stringify(batch)},s.access_token);ack.push(...(rows||[]))}
+ for(const row of updated){const q=new URLSearchParams({user_id:'eq.'+uid,record_key:'eq.'+row.record_key,'record_data->>at':expected[row.record_key]?'eq.'+expected[row.record_key]:'is.null'});const rows=await api('/rest/v1/study_records?'+q,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({record_data:row.record_data,updated_at:row.updated_at})},s.access_token);ack.push(...(rows||[]))}
+ const latest=read(META,{});for(const row of ack){const l=latest[row.record_key];if(l&&l.at===row.record_data.at&&JSON.stringify(l.value)===JSON.stringify(row.record_data.value))l.dirty=false}save(META,latest);
+ if(upload.length!==ack.length||Object.values(latest).some(x=>x.dirty)){show('有待同步记录 · 自动重试');schedule();return}
  show('已同步 · '+new Date().toLocaleTimeString());window.dispatchEvent(new Event('cet6:cloud-synced'));
  }catch(e){show('同步未完成 · 本地记录已保留');console.warn('CET6 sync',e)}finally{busy=false}}
  function ui(){const box=document.createElement('details');box.style.cssText='position:fixed;right:8px;bottom:8px;z-index:9999;background:#fffaf5;color:#594b68;border:1px solid #ddd1e5;border-radius:12px;padding:8px;font:13px system-ui;max-width:240px;box-shadow:0 2px 12px #0002';box.innerHTML='<summary id="cet6-cloud-status" style="cursor:pointer"></summary><form><input type="email" placeholder="邮箱" required autocomplete="username" style="width:100%;box-sizing:border-box;margin:5px 0"><input type="password" placeholder="密码" required autocomplete="current-password" style="width:100%;box-sizing:border-box;margin:5px 0"><button type="submit">登录并同步</button></form><button type="button" data-sync>立即同步</button> <button type="button" data-refresh>刷新页面</button>';document.body.append(box);const form=box.querySelector('form');form.hidden=!!read(SESSION,null);show(form.hidden?'准备同步…':status);form.onsubmit=async e=>{e.preventDefault();try{const [email,password]=form.querySelectorAll('input');const s=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:email.value,password:password.value})});save(SESSION,s);password.value='';form.hidden=true;await sync();}catch(e){show('登录失败，请检查邮箱密码或网络')}};box.querySelector('[data-sync]').onclick=sync;box.querySelector('[data-refresh]').onclick=()=>location.reload();sync()}

@@ -54,6 +54,11 @@ const libraries = [
     key: 'reading_vocab_28_v1',
     expectedTotal: 28,
     wrapper: true
+  },
+  {
+    id: 'reading_intervention', name: '阅读精读',
+    path: '/source-pages/reading-intervention.html',
+    key: 'cet6_reading_intervention_17_v1', expectedTotal: 29
   }
 ];
 const highCompatibilityWrapper = {
@@ -114,13 +119,14 @@ async function newContext(viewport = { width: 1280, height: 900 }) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   context.on('page', page => watchPage(page, errors));
   await context.addInitScript(() => {
+    window.__testSpokenWords = [];
     class TestUtterance {
       constructor(text) { this.text = text; }
     }
     Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: TestUtterance });
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
-      value: { cancel() {}, speak() {} }
+      value: { cancel() {}, speak(utterance) { window.__testSpokenWords.push(utterance.text); } }
     });
   });
   return { context, errors };
@@ -196,7 +202,11 @@ await run('首页入口、真实入口、数据总数与发音按钮', async () 
     const page = await context.newPage();
     await page.goto(`${BASE}/index.html`);
     assert.equal(await page.locator('a[href="study-data.html"]').count(), 1);
-    assert.equal(await page.locator('.shelf a').count(), 5, '首页应保留四词库并新增学习数据入口');
+    assert.equal(await page.locator('.shelf a').count(), 7, '首页应保留五词库、收藏夹和学习数据入口');
+    for (const library of libraries) {
+      assert.equal(await page.locator('.shelf a').evaluateAll((links, target) => links.filter(a => decodeURIComponent(new URL(a.href).pathname) === target).length, library.path), 1, library.name + ' 首页入口');
+    }
+    assert.equal(await page.locator('a[href^="source-pages/favorites.html?"]').count(), 1);
 
     for (const library of libraries) {
       const surface = await openLibrary(page, library);
@@ -208,25 +218,40 @@ await run('首页入口、真实入口、数据总数与发音按钮', async () 
       assert.equal(counts.total, library.expectedTotal, `${library.name} 总词数`);
       if (library.expectedUnits) assert.deepEqual(counts.units, library.expectedUnits, `${library.name} 单元词数`);
       assert(await surface.evaluate(() => Boolean(window.StudyProgress)), `${library.name} 未载入共享进度模块`);
-      await surface.locator('#card').click();
-      const soundButton = surface.locator('.inline-sound-btn, #inlineSoundBtn').first();
-      await soundButton.click();
-      if (library.wrapper) {
-        assert.equal(await page.locator('#notice').isVisible(), false, `${library.name} wrapper 报错提示不应显示`);
+      const word = await surface.locator('#word').textContent();
+      await surface.locator('#word').click();
+      assert.equal(await surface.locator('#ipa').evaluate(el => el.classList.contains('show')), true, `${library.name} 点击单词应显示音标`);
+      assert.equal(await surface.evaluate(() => window.__testSpokenWords.at(-1)), word, `${library.name} 应朗读当前单词`);
+      assert.equal(await surface.locator('#meaning').evaluate(el => el.classList.contains('show')), false, '只听读音不应显示释义');
+      if (library.wrapper) assert.equal(await page.locator('#notice').isVisible(), false, `${library.name} wrapper 报错提示不应显示`);
+      if (['handwriting','reading','reading_intervention'].includes(library.id)) {
         const hintToggle = surface.locator('#hintToggle');
-        if (!await hintToggle.isVisible()) {
-          await surface.evaluate(() => {
-            const hintedIndex = DATA.findIndex(item => item.hint);
-            order = [hintedIndex];
-            idx = 0;
-            render();
-          });
-          await surface.locator('#card').click();
+        const hintNote = surface.locator('#hintNote');
+        assert.equal(await hintToggle.count(), 1, `${library.name} 辅助理解控件应保留`);
+        assert.equal(await hintNote.count(), 1, `${library.name} 辅助理解内容控件应保留`);
+        const hintedIndex = await surface.evaluate(() => DATA.findIndex(item => Boolean(item.hint)));
+        if (hintedIndex < 0) {
+          // Reading intervention currently has no authored hints. Its empty state
+          // is intentional; the established handwriting/reading hints are required.
+          assert.equal(library.id, 'reading_intervention', `${library.name} 原有辅助理解内容不得丢失`);
+          assert.equal(await hintToggle.isVisible(), false, '无辅助理解内容时不显示入口');
+          assert.equal(await hintNote.isVisible(), false, '无辅助理解内容时不显示空弹层');
+          assert.equal(await surface.locator('#word').textContent(), word, '无提示词时不能破坏当前卡片');
+        } else {
+          if (!await hintToggle.isVisible()) {
+            await surface.evaluate(index => {
+              order = [index];
+              idx = 0;
+              render();
+            }, hintedIndex);
+            await surface.locator('#word').click();
+          }
+          assert.equal(await hintToggle.isVisible(), true, `${library.name} 辅助理解入口应保留`);
+          await hintToggle.click();
+          assert.equal(await hintNote.isVisible(), true, `${library.name} 辅助理解内容应可展开`);
+          await hintNote.click();
+          assert.equal(await hintNote.isVisible(), false, `${library.name} 辅助理解内容应可关闭`);
         }
-        assert.equal(await hintToggle.isVisible(), true, `${library.name} 辅助理解入口应保留`);
-        await hintToggle.click();
-        assert.equal(await surface.locator('#hintNote').isVisible(), true, `${library.name} 辅助理解内容应可展开`);
-        await surface.locator('#hintNote').click();
       }
     }
     assertNoErrors(errors, '真实入口冒烟测试');
@@ -243,7 +268,8 @@ await run('旧 localStorage 原值备份且仪表盘不伪造历史日期', asyn
       'cet6_middle_frequency_progress_v1_Unit 1': JSON.stringify({ 0: 'known' }),
       'cet6_middle_frequency_progress_v1_Unit 12': JSON.stringify({ 0: 'unknown' }),
       'handwritten_vocab_179_audio_ipa_v1': JSON.stringify({ 0: 'known', 1: 'unknown' }),
-      'reading_vocab_28_v1': JSON.stringify({ 0: 'unknown', 1: 'known' })
+      'reading_vocab_28_v1': JSON.stringify({ 0: 'unknown', 1: 'known' }),
+      'cet6_reading_intervention_17_v1': JSON.stringify({ 27: 'known', 28: 'unknown' })
     };
     await prepareStorage(context, legacy);
     const page = await context.newPage();
@@ -251,6 +277,7 @@ await run('旧 localStorage 原值备份且仪表盘不伪造历史日期', asyn
     const backup = await page.evaluate(() => JSON.parse(localStorage.getItem('cet6_issue7_progress_backup_v1')));
     assert.equal(backup.version, 1);
     assert.equal(backup.states['high:Unit 1'].raw, legacy['cet6_flash_733_audio_ipa_fixed_Unit 1']);
+    assert.equal(backup.states['reading_intervention:all'].raw, legacy['cet6_reading_intervention_17_v1']);
     const migratedHighState = JSON.parse(await page.evaluate(key => localStorage.getItem(key), libraries[0].key));
     assert.equal(migratedHighState[0], 'known');
     assert.equal(migratedHighState[1], 'unknown');
@@ -263,10 +290,11 @@ await run('旧 localStorage 原值备份且仪表盘不伪造历史日期', asyn
         { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 },
+        { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 }
       ]
     );
-    assert.deepEqual(dashboard.overall, { total: 1945, known: 4, unknown: 4, reviewed: 8 });
+    assert.deepEqual(dashboard.overall, { total: 1974, known: 5, unknown: 5, reviewed: 10 });
     assert.equal(dashboard.today, 0);
     assert.equal(dashboard.streak, 0);
     assert.equal(dashboard.garden.wateringDays, 0);
@@ -528,9 +556,12 @@ await run('学习事件去重、跨日趋势、连续天数与每日浇水阈值
     await prepareStorage(context);
     const page = await context.newPage();
     const surface = await openLibrary(page, libraries[0]);
-    await surface.locator('#card').click();
+    await surface.locator('#word').click();
+    assert.equal(await surface.evaluate(() => Object.keys(StudyProgress.readActivity().days).length), 0, '只听发音不能计入学习事件');
+    await surface.locator('#yesBtn').click();
     assert.equal(await surface.evaluate(() => Object.keys(StudyProgress.readActivity().days).length), 0, '只查看释义不能计入学习事件');
     await surface.locator('#yesBtn').click();
+    assert.equal(await surface.evaluate(() => StudyProgress.dashboard().today), 1, '确认判断后才计入学习事件');
     await page.reload({ waitUntil: 'load' });
     assert.equal(await page.evaluate(() => Object.keys(StudyProgress.readActivity().days).length), 1, '刷新不能重复增加学习事件');
     await page.goto(`${BASE}/study-data.html`);
@@ -589,7 +620,7 @@ await run('学习事件去重、跨日趋势、连续天数与每日浇水阈值
   }
 });
 
-await run('四个词库手机一屏布局与真实 wrapper 回归', async () => {
+await run('五个词库手机一屏布局与真实 wrapper 回归', async () => {
   const { context, errors } = await newContext({ width: 390, height: 844 });
   try {
     await prepareStorage(context, {
@@ -630,6 +661,75 @@ await run('四个词库手机一屏布局与真实 wrapper 回归', async () => 
     assert.equal(fullyKnownLockedRound.currentWord, await high.evaluate(() => DATA['Unit 1'][0].word));
     await page.screenshot({ path: path.join(RESULTS_DIR, 'issue7-locked-round-mobile.png'), fullPage: true });
     assertNoErrors(errors, '手机一屏回归');
+  } finally {
+    await context.close();
+  }
+});
+
+await run('收藏夹：真实词库、重点规则、锁定循环、独立记录与模拟云端更新', async () => {
+  const { context, errors } = await newContext();
+  const reviewKey = 'cet6_favorite_review_v1';
+  const starKey = 'cet6_favorite_words_v1';
+  const highKey = libraries[0].key;
+  const seed = {
+    [reviewKey]: JSON.stringify({ bias: 'unknown', analyze: 'unknown', burden: 'known' }),
+    [starKey]: JSON.stringify({ bias: {addedAt: 1}, analyze: {addedAt: 2}, burden: {addedAt: 3} }),
+    [highKey]: JSON.stringify({ 0: 'known', 1: 'unknown' })
+  };
+  try {
+    await prepareStorage(context, seed);
+    const page = await context.newPage();
+    await page.goto(BASE + '/source-pages/favorites.html');
+    await page.locator('#yes:enabled').waitFor();
+    const word = () => page.locator('#word').textContent();
+    const marks = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)), reviewKey);
+    const mode = value => page.locator('.filter[data-mode="' + value + '"]').click();
+    const judge = async value => {
+      const button = page.locator(value === 'known' ? '#yes' : '#no');
+      await button.click();
+      await button.click();
+    };
+    assert.equal(await word(), 'bias');
+    await judge('known');
+    assert.equal((await marks()).bias, 'unknown');
+    await mode('unknown');
+    assert.equal(await word(), 'bias');
+    await judge('known');
+    assert.equal((await marks()).bias, 'known');
+    assert.equal(await word(), 'analyze');
+    assert.match(await page.locator('#position').textContent(), /^2 \/ 2/);
+    await page.locator('#prev').click();
+    assert.equal(await word(), 'bias');
+    assert.equal((await marks()).bias, 'known');
+    await judge('known');
+    await judge('known');
+    assert.equal(await word(), 'bias', '已解除重点的词仍保留在当前循环');
+    await page.locator('#shuffle').click();
+    assert.match(await page.locator('#position').textContent(), /^1 \/ 2/);
+    await mode('all');
+    await mode('unknown');
+    assert.equal(await page.locator('#yes').isDisabled(), true, '切换模式后重新筛选');
+    await mode('all');
+    await page.evaluate(key => {
+      const state = JSON.parse(localStorage.getItem(key));
+      state.analyze = 'unknown';
+      state.remote_test = 'unknown';
+      localStorage.setItem(key, JSON.stringify(state));
+      window.dispatchEvent(new Event('cet6:cloud-synced'));
+    }, reviewKey);
+    await judge('known');
+    assert.equal((await marks()).remote_test, 'unknown', '不可覆盖其他同步记录');
+    assert.equal((await marks()).analyze, 'unknown');
+    await mode('unknown');
+    assert.equal(await word(), 'analyze');
+    await page.reload({waitUntil:'load'});
+    await page.locator('#yes:enabled').waitFor();
+    assert.equal(await word(), 'analyze', '恢复位置');
+    assert.equal((await marks()).analyze, 'unknown');
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), highKey), seed[highKey]);
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), starKey), seed[starKey]);
+    assert.equal(await page.evaluate(() => localStorage.getItem('cet6_study_activity_v1')), null);
+    assertNoErrors(errors, '收藏夹回归');
   } finally {
     await context.close();
   }

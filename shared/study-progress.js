@@ -32,7 +32,7 @@
     }),
     Object.freeze({
       id: 'reading_intervention', name: '阅读精读', icon: '📖', type: 'flat',
-      key: 'cet6_reading_intervention_17_v1', total: 27
+      key: 'cet6_reading_intervention_17_v1', total: 29
     })
   ]);
 

@@ -122,7 +122,7 @@ test('normal reset remains immediate; inline hints are unchanged', () => {
   }
 });
 
-test('all four real study pages and three legacy wrappers load the fresh module', () => {
+test('real study pages and legacy wrappers resolve current versioned entries', () => {
   const sources = [
     'source-pages/cet6-flash-original.html',
     'source-pages/cet6-middle-frequency.html',
@@ -136,15 +136,43 @@ test('all four real study pages and three legacy wrappers load the fresh module'
     assert.ok(html.includes('unknownSnapshot'), source);
   }
   const wrappers = [
-    '六级词汇闪过_前九单元词义终校_补identify版.html',
-    '手写单词本_179词_刷词网页_词义核对修正版.html',
-    '阅读重点词_28词_刷词网页(1).html'
+    ['六级词汇闪过_前九单元词义终校_补identify版.html', 'source-pages/cet6-flash-original.html'],
+    ['手写单词本_179词_刷词网页_词义核对修正版.html', 'source-pages/handwriting-original.html'],
+    ['阅读重点词_28词_刷词网页(1).html', 'source-pages/reading-original.html']
   ];
-  for (const wrapper of wrappers) {
+  for (const [wrapper, target] of wrappers) {
     const html = fs.readFileSync(path.join(root, wrapper), 'utf8');
-    assert.ok(html.includes('?v=' + cache), wrapper);
+    const src = html.match(/<iframe\b[^>]*\bsrc="([^"]+)"/)?.[1];
+    assert.ok(src, wrapper + ' iframe missing');
+    const url = new URL(src, 'https://test.invalid/');
+    assert.equal(url.pathname, '/' + target, wrapper + ' must use the current source page');
+    assert.ok(url.searchParams.get('v'), wrapper + ' must have a cache version');
     assert.ok(!html.includes('eval('), wrapper);
   }
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.equal((index.match(new RegExp('\\?v=' + cache, 'g')) || []).length, 4);
+  for (const target of [
+    'source-pages/cet6-flash-original.html',
+    'source-pages/cet6-middle-frequency.html',
+    wrappers[1][0], wrappers[2][0],
+    'source-pages/reading-intervention.html', 'source-pages/favorites.html'
+  ]) {
+    const matches = [...index.matchAll(/href="([^"]+)"/g)].filter(m => m[1].split('?')[0] === target);
+    assert.equal(matches.length, 1, target + ' must have exactly one homepage entry');
+    assert.ok(new URL(matches[0][1], 'https://test.invalid/').searchParams.get('v'), target + ' cache version');
+  }
+  assert.ok(index.includes('href="study-data.html"'));
+});
+
+
+test('reading intervention counts the two appended words without changing their state', () => {
+  const { progress, storage } = loadProgress();
+  const key = 'cet6_reading_intervention_17_v1';
+  const raw = '{"27":"known","28":"unknown"}';
+  storage.setItem(key, raw);
+  const reading = progress.dashboard().libraries.find(item => item.id === 'reading_intervention');
+  assert.equal(reading.total, 29);
+  assert.equal(reading.known, 1);
+  assert.equal(reading.unknown, 1);
+  assert.equal(reading.reviewed, 2);
+  assert.equal(storage.getItem(key), raw);
 });

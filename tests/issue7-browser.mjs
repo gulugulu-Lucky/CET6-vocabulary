@@ -226,19 +226,32 @@ await run('首页入口、真实入口、数据总数与发音按钮', async () 
       if (library.wrapper) assert.equal(await page.locator('#notice').isVisible(), false, `${library.name} wrapper 报错提示不应显示`);
       if (['handwriting','reading','reading_intervention'].includes(library.id)) {
         const hintToggle = surface.locator('#hintToggle');
-        if (!await hintToggle.isVisible()) {
-          await surface.evaluate(() => {
-            const hintedIndex = DATA.findIndex(item => item.hint);
-            order = [hintedIndex];
-            idx = 0;
-            render();
-          });
-          await surface.locator('#card').click();
+        const hintNote = surface.locator('#hintNote');
+        assert.equal(await hintToggle.count(), 1, `${library.name} 辅助理解控件应保留`);
+        assert.equal(await hintNote.count(), 1, `${library.name} 辅助理解内容控件应保留`);
+        const hintedIndex = await surface.evaluate(() => DATA.findIndex(item => Boolean(item.hint)));
+        if (hintedIndex < 0) {
+          // Reading intervention currently has no authored hints. Its empty state
+          // is intentional; the established handwriting/reading hints are required.
+          assert.equal(library.id, 'reading_intervention', `${library.name} 原有辅助理解内容不得丢失`);
+          assert.equal(await hintToggle.isVisible(), false, '无辅助理解内容时不显示入口');
+          assert.equal(await hintNote.isVisible(), false, '无辅助理解内容时不显示空弹层');
+          assert.equal(await surface.locator('#word').textContent(), word, '无提示词时不能破坏当前卡片');
+        } else {
+          if (!await hintToggle.isVisible()) {
+            await surface.evaluate(index => {
+              order = [index];
+              idx = 0;
+              render();
+            }, hintedIndex);
+            await surface.locator('#word').click();
+          }
+          assert.equal(await hintToggle.isVisible(), true, `${library.name} 辅助理解入口应保留`);
+          await hintToggle.click();
+          assert.equal(await hintNote.isVisible(), true, `${library.name} 辅助理解内容应可展开`);
+          await hintNote.click();
+          assert.equal(await hintNote.isVisible(), false, `${library.name} 辅助理解内容应可关闭`);
         }
-        assert.equal(await hintToggle.isVisible(), true, `${library.name} 辅助理解入口应保留`);
-        await hintToggle.click();
-        assert.equal(await surface.locator('#hintNote').isVisible(), true, `${library.name} 辅助理解内容应可展开`);
-        await surface.locator('#hintNote').click();
       }
     }
     assertNoErrors(errors, '真实入口冒烟测试');

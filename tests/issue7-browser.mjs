@@ -54,7 +54,20 @@ const libraries = [
     key: 'reading_vocab_28_v1',
     expectedTotal: 28,
     wrapper: true
+  },
+  {
+    id: 'reading_intervention',
+    name: '阅读精读',
+    path: '/source-pages/reading-intervention.html',
+    key: 'cet6_reading_intervention_17_v1',
+    expectedTotal: 29
   }
+];
+const pronunciationVariants = [
+  { name: '高频词发音版', path: '/source-pages/cet6-flash-pronunciation.html' },
+  { name: '中频词发音版', path: '/source-pages/cet6-middle-frequency-pronunciation.html' },
+  { name: '手写单词本发音版', path: '/source-pages/handwriting-pronunciation.html' },
+  { name: '阅读重点词发音版', path: '/source-pages/reading-pronunciation.html' }
 ];
 const highCompatibilityWrapper = {
   ...libraries[0],
@@ -117,10 +130,11 @@ async function newContext(viewport = { width: 1280, height: 900 }) {
     class TestUtterance {
       constructor(text) { this.text = text; }
     }
+    window.__spokenWords = [];
     Object.defineProperty(window, 'SpeechSynthesisUtterance', { configurable: true, value: TestUtterance });
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
-      value: { cancel() {}, speak() {} }
+      value: { cancel() {}, speak(utterance) { window.__spokenWords.push(utterance.text); } }
     });
   });
   return { context, errors };
@@ -189,14 +203,25 @@ async function run(name, test) {
   }
 }
 
-await run('首页入口、真实入口、数据总数与发音按钮', async () => {
+await run('首页七个入口、五个词库、数据总数与发音按钮', async () => {
   const { context, errors } = await newContext();
   try {
     await prepareStorage(context);
     const page = await context.newPage();
     await page.goto(`${BASE}/index.html`);
-    assert.equal(await page.locator('a[href="study-data.html"]').count(), 1);
-    assert.equal(await page.locator('.shelf a').count(), 5, '首页应保留四词库并新增学习数据入口');
+    const homeEntries = await page.locator('nav.shelf a').evaluateAll(links => links.map(link => ({
+      name: link.querySelector('strong')?.textContent.trim(),
+      href: link.getAttribute('href')
+    })));
+    assert.deepEqual(homeEntries, [
+      { name: '高频词汇', href: 'source-pages/cet6-flash-original.html?v=20261107-favorites-v1' },
+      { name: '中频词汇', href: 'source-pages/cet6-middle-frequency.html?v=20261107-favorites-v1' },
+      { name: '手写单词本', href: '手写单词本_179词_刷词网页_词义核对修正版.html?v=20261107-favorites-v1' },
+      { name: '阅读重点词', href: '阅读重点词_28词_刷词网页(1).html?v=20261107-favorites-v1' },
+      { name: '阅读精读', href: 'source-pages/reading-intervention.html?v=20261127-reading29-v1' },
+      { name: '我的收藏', href: 'source-pages/favorites.html?v=20261107-clean-v3' },
+      { name: '学习数据', href: 'study-data.html' }
+    ]);
 
     for (const library of libraries) {
       const surface = await openLibrary(page, library);
@@ -208,9 +233,10 @@ await run('首页入口、真实入口、数据总数与发音按钮', async () 
       assert.equal(counts.total, library.expectedTotal, `${library.name} 总词数`);
       if (library.expectedUnits) assert.deepEqual(counts.units, library.expectedUnits, `${library.name} 单元词数`);
       assert(await surface.evaluate(() => Boolean(window.StudyProgress)), `${library.name} 未载入共享进度模块`);
+      const currentWord = await surface.locator('#word').textContent();
       await surface.locator('#card').click();
-      const soundButton = surface.locator('.inline-sound-btn, #inlineSoundBtn').first();
-      await soundButton.click();
+      assert.equal(await surface.locator('#ipa').isVisible(), true, `${library.name} 点击卡片后应显示音标`);
+      assert.equal(await surface.evaluate(() => window.__spokenWords.at(-1)), currentWord, `${library.name} 点击卡片后应发音`);
       if (library.wrapper) {
         assert.equal(await page.locator('#notice').isVisible(), false, `${library.name} wrapper 报错提示不应显示`);
         const hintToggle = surface.locator('#hintToggle');
@@ -229,6 +255,14 @@ await run('首页入口、真实入口、数据总数与发音按钮', async () 
         await surface.locator('#hintNote').click();
       }
     }
+    for (const variant of pronunciationVariants) {
+      await page.goto(BASE + variant.path, { waitUntil: 'load' });
+      await page.locator('#word').waitFor();
+      const currentWord = await page.locator('#word').textContent();
+      await page.locator('#card').click();
+      assert.equal(await page.locator('#ipa').isVisible(), true, `${variant.name} 点击卡片后应显示音标`);
+      assert.equal(await page.evaluate(() => window.__spokenWords.at(-1)), currentWord, `${variant.name} 点击卡片后应发音`);
+    }
     assertNoErrors(errors, '真实入口冒烟测试');
   } finally {
     await context.close();
@@ -243,7 +277,8 @@ await run('旧 localStorage 原值备份且仪表盘不伪造历史日期', asyn
       'cet6_middle_frequency_progress_v1_Unit 1': JSON.stringify({ 0: 'known' }),
       'cet6_middle_frequency_progress_v1_Unit 12': JSON.stringify({ 0: 'unknown' }),
       'handwritten_vocab_179_audio_ipa_v1': JSON.stringify({ 0: 'known', 1: 'unknown' }),
-      'reading_vocab_28_v1': JSON.stringify({ 0: 'unknown', 1: 'known' })
+      'reading_vocab_28_v1': JSON.stringify({ 0: 'unknown', 1: 'known' }),
+      'cet6_reading_intervention_17_v1': JSON.stringify({ 0: 'known', 1: 'unknown' })
     };
     await prepareStorage(context, legacy);
     const page = await context.newPage();
@@ -263,10 +298,11 @@ await run('旧 localStorage 原值备份且仪表盘不伪造历史日期', asyn
         { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 },
+        { reviewed: 2, known: 1, unknown: 1 },
         { reviewed: 2, known: 1, unknown: 1 }
       ]
     );
-    assert.deepEqual(dashboard.overall, { total: 1945, known: 4, unknown: 4, reviewed: 8 });
+    assert.deepEqual(dashboard.overall, { total: 1974, known: 5, unknown: 5, reviewed: 10 });
     assert.equal(dashboard.today, 0);
     assert.equal(dashboard.streak, 0);
     assert.equal(dashboard.garden.wateringDays, 0);
@@ -530,7 +566,7 @@ await run('学习事件去重、跨日趋势、连续天数与每日浇水阈值
     const surface = await openLibrary(page, libraries[0]);
     await surface.locator('#card').click();
     assert.equal(await surface.evaluate(() => Object.keys(StudyProgress.readActivity().days).length), 0, '只查看释义不能计入学习事件');
-    await surface.locator('#yesBtn').click();
+    await mark(surface, 'known');
     await page.reload({ waitUntil: 'load' });
     assert.equal(await page.evaluate(() => Object.keys(StudyProgress.readActivity().days).length), 1, '刷新不能重复增加学习事件');
     await page.goto(`${BASE}/study-data.html`);
@@ -589,7 +625,7 @@ await run('学习事件去重、跨日趋势、连续天数与每日浇水阈值
   }
 });
 
-await run('四个词库手机一屏布局与真实 wrapper 回归', async () => {
+await run('五个词库手机一屏布局与真实 wrapper 回归', async () => {
   const { context, errors } = await newContext({ width: 390, height: 844 });
   try {
     await prepareStorage(context, {

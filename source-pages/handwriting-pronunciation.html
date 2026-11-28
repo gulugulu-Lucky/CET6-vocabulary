@@ -486,7 +486,6 @@ $('resetBtn').onclick = () => {
 $('yesBtn').onclick = yesReview;
 $('noBtn').onclick = noReview;
 $('prevBtn').onclick = goPrev;
-$('card').onclick = revealPronunciation;
 document.querySelectorAll('.chip').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
@@ -518,6 +517,7 @@ function revealPronunciation() {
   $('ipa').classList.add('show');
   speakWord();
 }
+$('card').onclick = revealPronunciation;
 const HINTS = Object.freeze({
   compound: {
     senses: [

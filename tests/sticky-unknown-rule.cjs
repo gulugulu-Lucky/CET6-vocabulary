@@ -122,12 +122,13 @@ test('normal reset remains immediate; inline hints are unchanged', () => {
   }
 });
 
-test('all four real study pages and three legacy wrappers load the fresh module', () => {
+test('all five real study pages and three legacy wrappers load the fresh module', () => {
   const sources = [
     'source-pages/cet6-flash-original.html',
     'source-pages/cet6-middle-frequency.html',
     'source-pages/handwriting-original.html',
-    'source-pages/reading-original.html'
+    'source-pages/reading-original.html',
+    'source-pages/reading-intervention.html'
   ];
   for (const source of sources) {
     const html = fs.readFileSync(path.join(root, source), 'utf8');
@@ -136,15 +137,23 @@ test('all four real study pages and three legacy wrappers load the fresh module'
     assert.ok(html.includes('unknownSnapshot'), source);
   }
   const wrappers = [
-    '六级词汇闪过_前九单元词义终校_补identify版.html',
-    '手写单词本_179词_刷词网页_词义核对修正版.html',
-    '阅读重点词_28词_刷词网页(1).html'
+    ['六级词汇闪过_前九单元词义终校_补identify版.html', 'source-pages/cet6-flash-original.html'],
+    ['手写单词本_179词_刷词网页_词义核对修正版.html', 'source-pages/handwriting-original.html'],
+    ['阅读重点词_28词_刷词网页(1).html', 'source-pages/reading-original.html']
   ];
-  for (const wrapper of wrappers) {
+  for (const [wrapper, target] of wrappers) {
     const html = fs.readFileSync(path.join(root, wrapper), 'utf8');
-    assert.ok(html.includes('?v=' + cache), wrapper);
+    assert.ok(html.includes('src="' + target + '?v='), wrapper + ' must use a versioned real-page target');
     assert.ok(!html.includes('eval('), wrapper);
   }
   const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.equal((index.match(new RegExp('\\?v=' + cache, 'g')) || []).length, 4);
+  for (const target of [
+    'source-pages/cet6-flash-original.html',
+    'source-pages/cet6-middle-frequency.html',
+    '手写单词本_179词_刷词网页_词义核对修正版.html',
+    '阅读重点词_28词_刷词网页(1).html',
+    'source-pages/reading-intervention.html'
+  ]) {
+    assert.ok(index.includes('href="' + target + '?v='), target + ' home entry must be versioned');
+  }
 });

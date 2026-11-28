@@ -284,6 +284,7 @@ body {
   let catalog = [], list = [], position = 0, history = [];
   let selectedMode = 'all', revealed = false, loaded = false, toastTimer = 0;
   let marks = readMarks();
+  let unknownSnapshot = null;
   function readMarks() {
     try {const data=JSON.parse(localStorage.getItem(MARK_KEY)||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{};}catch(_){return {};}
   }
@@ -348,12 +349,17 @@ body {
   function isStarred(entry){return Boolean(entry&&favorites.has(entry.word));}
   function activeWords(){
     const items=catalog.filter(isStarred);
-    if(selectedMode==='unknown')return items.filter(x=>marks[x.key]==='unknown');
+    if(selectedMode==='unknown'){
+      // Keep the selected review round stable even after a word becomes known.
+      if(unknownSnapshot===null)unknownSnapshot=new Set(items.filter(x=>marks[x.key]==='unknown').map(x=>x.key));
+      return items.filter(x=>unknownSnapshot.has(x.key));
+    }
     if(selectedMode==='unseen')return items.filter(x=>!marks[x.key]);
     return items;
   }
   function saveResume(){try {const item=current();if(item)localStorage.setItem(RESUME_KEY,item.key);}catch(_){}}
   function resetQueue(restore=false,shuffle=false){
+    marks=readMarks();
     list=activeWords();
     if(shuffle)for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
     position=0;history=[];
@@ -406,7 +412,11 @@ body {
   function mark(value){
     const old=current();if(!old)return;
     if(!revealed){revealMeaning();return;}
-    marks[old.key]=value;saveMarks();history.push(old.key);
+    // Read the latest persisted marks before editing one word, including any synced changes.
+    marks=readMarks();
+    // Only the dedicated unknown mode can clear an existing unknown mark.
+    if(value!=='known'||marks[old.key]!=='unknown'||selectedMode==='unknown')marks[old.key]=value;
+    saveMarks();history.push(old.key);
     advance(old.key);
   }
   function advance(previousKey){
@@ -444,11 +454,11 @@ body {
   $('shuffle').onclick=()=>{if(loaded){resetQueue(false,true);flash('已经打乱当前顺序');}};
   $('reset').onclick=()=>{
     if(!loaded)return;
-    marks={};saveMarks();selectedMode='all';document.querySelectorAll('.filter').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode==='all')));
+    marks={};saveMarks();selectedMode='all';unknownSnapshot=null;document.querySelectorAll('.filter').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode==='all')));
     resetQueue();
   };
   document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{
-    selectedMode=b.dataset.mode;
+    selectedMode=b.dataset.mode;unknownSnapshot=null;
     document.querySelectorAll('.filter').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
     if(loaded)resetQueue();
   });
@@ -461,6 +471,11 @@ body {
   window.addEventListener('storage',event=>{
     if(event.key===favorites.STORAGE_KEY&&loaded){resetQueue(true);}
     if(event.key===MARK_KEY){marks=readMarks();if(loaded)resetQueue(true);}
+  });
+  // A cloud pull may update local storage in this tab without a storage event.
+  // Refresh counts, but do not restart the active review round.
+  window.addEventListener('cet6:cloud-synced',()=>{
+    marks=readMarks();if(loaded)stats();
   });
   document.addEventListener('keydown',event=>{
     if(event.target instanceof HTMLElement&&/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName))return;
